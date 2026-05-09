@@ -54,18 +54,19 @@ body { background-color: var(--bg-oled); color: var(--text-main); display: flex;
 /* The Enclosed Premium Input Redesign */
 .massive-input { display: flex; align-items: baseline; justify-content: center; width: 100%; }
 .massive-input input { 
-    font-size: 2.8rem; 
+    font-size: 2.4rem; 
     font-weight: 300; 
     text-align: center; 
-    background: rgba(255,255,255,0.03); 
-    border: 1px solid #222; 
+    background: rgba(255,255,255,0.02); 
+    border: 1px solid rgba(255,255,255,0.08); 
     border-radius: 14px; 
-    color: #fff; 
+    color: var(--nodee-gold); 
     width: 100%; 
-    padding: 15px 0; 
-    transition: all 0.3s ease; 
+    padding: 12px 0; 
+    transition: all 0.2s ease; 
 }
-.massive-input input:focus { border-color: var(--nodee-gold); background: rgba(255,255,255,0.06); }
+.massive-input input:focus { border-color: var(--nodee-gold); background: rgba(255,255,255,0.05); }
+.massive-input input::placeholder { color: rgba(255,255,255,0.15); font-weight: 200; }
 
 /* Steppers */
 .stepper-control { display: flex; align-items: center; justify-content: space-between; background: #111; border-radius: 14px; padding: 5px; }
@@ -94,9 +95,8 @@ body { background-color: var(--bg-oled); color: var(--text-main); display: flex;
 .neon-cyan .ing-amount { color: var(--neon-cyan); }
 
 /* Wash & Mod Pills */
-.wash-pill, .mod-pill { flex: 1; border: 1px solid #444; color: var(--text-muted); padding: 12px 0; border-radius: 12px; font-size: 0.9rem; font-weight: 700; text-align: center; transition: all 0.2s; }
+.wash-pill, .mod-pill { flex: 1; background: rgba(255,255,255,0.03); border: 1px solid rgba(255,255,255,0.08); color: var(--text-muted); padding: 14px 0; border-radius: 14px; font-size: 0.85rem; font-weight: 800; letter-spacing: 1px; text-align: center; transition: all 0.2s ease; cursor: pointer; }
 .wash-pill.active, .mod-pill.active { background: var(--nodee-gold); border-color: var(--nodee-gold); color: var(--bg-oled); }
-
 /* Quick Pills */
 .quick-pills { gap: 10px; }
 .quick-pill-btn { flex: 1; border: 1px solid rgba(255,255,255,0.1); background: rgba(255,255,255,0.04); color: var(--text-muted); padding: 10px 0; border-radius: 10px; font-size: 0.8rem; font-weight: 700; cursor: pointer; }
