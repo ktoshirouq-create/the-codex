@@ -258,3 +258,11 @@ body {
 .vault-details .result-row:last-child { border-bottom: none; }
 .vault-details .ing-name { font-size: 1.1rem; color: var(--text-main); font-weight: 600; margin-bottom: 2px;}
 .vault-details .ing-amount { font-size: 1.25rem; font-weight: 400; }
+
+/* BRIX CHEAT SHEET TABLE */
+.brix-table { width: 100%; border-collapse: collapse; font-size: 1.1rem; }
+.brix-table td { padding: 12px 0; border-bottom: 1px solid rgba(255,255,255,0.05); color: var(--text-main); font-weight: 300; }
+.brix-table tr:last-child td { border-bottom: none; }
+.brix-table .row-group { color: var(--nodee-gold); font-weight: 800; padding-top: 30px; padding-bottom: 8px; border-bottom: 1px solid rgba(200, 169, 126, 0.2); text-transform: uppercase; letter-spacing: 2px; font-size: 0.85rem; }
+.brix-table .align-right { text-align: right; }
+.brix-table .brix-highlight { color: var(--nodee-gold); font-weight: 600; }
