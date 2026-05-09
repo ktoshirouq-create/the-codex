@@ -8,11 +8,22 @@
     <link rel="icon" type="image/png" href="icon-512.png">
     <link rel="apple-touch-icon" href="icon-512.png">
     
-    <!-- CACHE BUSTER V19 -->
-    <link rel="stylesheet" href="styles.css?v=19">
+    <!-- CACHE BUSTER V20 -->
+    <link rel="stylesheet" href="styles.css?v=20">
 </head>
 <body>
     <div id="loader" class="loader-overlay"><span class="loader-text">SYNCING CODEX...</span></div>
+
+    <!-- CUSTOM SELECTION MODAL (Replaces Native Dropdowns) -->
+    <div id="selection-modal" class="custom-modal hidden">
+        <div class="modal-content glass-panel">
+            <div class="modal-header">
+                <h3 id="selection-modal-title" class="text-gold" style="letter-spacing: 2px;">SELECT</h3>
+                <button id="close-selection-modal" class="action-btn">CLOSE</button>
+            </div>
+            <div id="selection-modal-list" class="modal-list"></div>
+        </div>
+    </div>
 
     <header class="top-bar">
         <h1 class="brand">THE CODEX</h1>
@@ -54,18 +65,11 @@
                 <div class="flex-row mb-20">
                     <div class="half-width">
                         <label class="text-muted text-sm">Base Liquid</label>
-                        <select id="acid-base" class="premium-basic-input w-100">
-                            <option value="orange">Orange Juice (~1%)</option>
-                            <option value="grapefruit">Grapefruit (~2%)</option>
-                            <option value="pineapple">Pineapple (~0.8%)</option>
-                        </select>
+                        <button id="btn-acid-base" class="premium-basic-input custom-select-btn w-100">Orange Juice (~1%)</button>
                     </div>
                     <div class="half-width">
                         <label class="text-muted text-sm">Target</label>
-                        <select id="acid-target" class="premium-basic-input w-100">
-                            <option value="lemon">Lemon (6% Citric)</option>
-                            <option value="lime">Lime (4% Cit, 2% Mal)</option>
-                        </select>
+                        <button id="btn-acid-target" class="premium-basic-input custom-select-btn w-100">Lemon (6% Citric)</button>
                     </div>
                 </div>
                 <div class="input-group">
@@ -106,7 +110,7 @@
                     <tr><td colspan="2" class="row-group">DEMERARA / WHITE / CANE</td></tr>
                     <tr><td>1 : 1 Ratio</td><td class="align-right">50 Brix</td></tr>
                     <tr><td>1.5 : 1 Ratio</td><td class="align-right">60 Brix</td></tr>
-                    <tr><td>1.85 : 1 Ratio</td><td class="align-right text-gold fw-bold">65 Brix (House)</td></tr>
+                    <tr><td>1.85 : 1 Ratio</td><td class="align-right text-gold fw-bold">65 Brix</td></tr>
                     <tr><td>2 : 1 Ratio</td><td class="align-right">66.6 Brix</td></tr>
                     <tr><td colspan="2" class="row-group">HONEY (80 BRIX RAW)</td></tr>
                     <tr><td>3 : 1 Ratio</td><td class="align-right">60 Brix</td></tr>
@@ -121,22 +125,30 @@
             
             <div class="card glass-panel">
                 <h2 class="card-title text-gold">FORWARD BATCH (EVENTS)</h2>
-                <select id="forward-spec-select" class="premium-basic-input w-100 mb-20"><option value="">Select Spec...</option></select>
+                <button id="btn-forward-spec" class="premium-basic-input custom-select-btn w-100 mb-20 text-muted">Select Spec...</button>
                 
                 <div class="flex-row">
                     <div class="half-width">
                         <label class="text-muted text-sm">Target Drinks</label>
-                        <div class="massive-input mt-10"><input type="number" id="forward-drinks" value="20"></div>
+                        <div class="stepper-control mt-10">
+                            <button id="fd-minus" class="stepper-btn">−</button>
+                            <span id="fd-val" class="stepper-value">20</span>
+                            <button id="fd-plus" class="stepper-btn">+</button>
+                        </div>
                     </div>
                     <div class="half-width">
                         <label class="text-muted text-sm">Dilution %</label>
-                        <div class="massive-input mt-10"><input type="number" id="forward-dilution" value="20"></div>
+                        <div class="stepper-control mt-10">
+                            <button id="dil-minus" class="stepper-btn">−</button>
+                            <span id="dil-val" class="stepper-value">20%</span>
+                            <button id="dil-plus" class="stepper-btn">+</button>
+                        </div>
                     </div>
                 </div>
-                <div class="quick-pills flex-row mb-20">
-                    <button class="quick-pill-btn" onclick="document.getElementById('forward-dilution').value=0">0% (None)</button>
-                    <button class="quick-pill-btn" onclick="document.getElementById('forward-dilution').value=20">20% (Stirred)</button>
-                    <button class="quick-pill-btn" onclick="document.getElementById('forward-dilution').value=25">25% (Shaken)</button>
+                <div class="quick-pills flex-row mb-20 mt-20">
+                    <button class="quick-pill-btn" onclick="updateDilution(0)">0% (None)</button>
+                    <button class="quick-pill-btn" onclick="updateDilution(20)">20% (Stirred)</button>
+                    <button class="quick-pill-btn" onclick="updateDilution(25)">25% (Shaken)</button>
                 </div>
 
                 <button id="calc-forward-btn" class="btn-primary">CALCULATE BATCH</button>
@@ -145,8 +157,8 @@
 
             <div class="card glass-panel">
                 <h2 class="card-title text-gold">REVERSE BATCH (LIMITING FACTOR)</h2>
-                <select id="reverse-spec-select" class="premium-basic-input w-100 mb-20"><option value="">Select Spec...</option></select>
-                <select id="reverse-ing-select" class="premium-basic-input w-100 mb-20 hidden"><option value="">Select Limiting Ingredient...</option></select>
+                <button id="btn-reverse-spec" class="premium-basic-input custom-select-btn w-100 mb-20 text-muted">Select Spec...</button>
+                <button id="btn-reverse-ing" class="premium-basic-input custom-select-btn w-100 mb-20 hidden text-muted">Select Limiting Ingredient...</button>
                 
                 <div id="reverse-vol-container" class="hidden">
                     <div class="input-group">
@@ -174,7 +186,7 @@
         </button>
     </nav>
 
-    <!-- CACHE BUSTER V19 -->
-    <script src="app.js?v=19"></script>
+    <!-- CACHE BUSTER V20 -->
+    <script src="app.js?v=20"></script>
 </body>
 </html>
