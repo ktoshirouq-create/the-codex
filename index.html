@@ -8,18 +8,19 @@
     <link rel="icon" type="image/png" href="icon-512.png">
     <link rel="apple-touch-icon" href="icon-512.png">
     
-    <!-- CACHE BUSTER V20 -->
-    <link rel="stylesheet" href="styles.css?v=20">
+    <!-- CACHE BUSTER V21 -->
+    <link rel="stylesheet" href="styles.css?v=21">
 </head>
 <body>
     <div id="loader" class="loader-overlay"><span class="loader-text">SYNCING CODEX...</span></div>
 
-    <!-- CUSTOM SELECTION MODAL (Replaces Native Dropdowns) -->
+    <!-- CUSTOM SELECTION MODAL -->
     <div id="selection-modal" class="custom-modal hidden">
-        <div class="modal-content glass-panel">
-            <div class="modal-header">
+        <div class="modal-content glass-panel" id="modal-content-area">
+            <div class="drag-handle"></div>
+            <div class="modal-header" id="modal-drag-zone">
                 <h3 id="selection-modal-title" class="text-gold" style="letter-spacing: 2px;">SELECT</h3>
-                <button id="close-selection-modal" class="action-btn">CLOSE</button>
+                <button id="close-selection-modal" class="action-btn" style="font-size:2.2rem; line-height:0.5; font-weight:300;">&times;</button>
             </div>
             <div id="selection-modal-list" class="modal-list"></div>
         </div>
@@ -29,6 +30,8 @@
         <h1 class="brand">THE CODEX</h1>
         <button id="edit-toggle" class="lock-btn">LOCKED</button>
     </header>
+
+    <div id="ptr-indicator" class="ptr-indicator">↓ PULL TO REFRESH ↓</div>
 
     <main class="content-area" id="scroll-area">
         
@@ -50,9 +53,9 @@
             </div>
 
             <!-- PUBLIC: Recipe Vault -->
-            <div class="card glass-panel">
-                <h2 class="card-title text-muted border-bottom pb-10">DATABASE</h2>
-                <input type="text" id="vault-search" class="premium-basic-input w-100" placeholder="Search Specs & Batches...">
+            <div class="card glass-panel" style="padding: 25px 15px;">
+                <h2 class="card-title text-muted border-bottom pb-10" style="padding-left: 5px;">DATABASE</h2>
+                <input type="text" id="vault-search" class="search-pill w-100" placeholder="Search Specs & Batches...">
                 <div id="managed-vault-list"></div>
             </div>
         </section>
@@ -76,7 +79,7 @@
                     <label>Volume (ml)</label>
                     <div class="massive-input"><input type="number" id="acid-vol" value="1000"></div>
                 </div>
-                <button id="calc-acid-btn" class="btn-primary cyan-btn">CALCULATE POWDERS</button>
+                <button id="calc-acid-btn" class="btn-primary cyan-btn">ADJUST ACID</button>
                 <div id="acid-results" class="output-container mt-20"></div>
             </div>
 
@@ -186,7 +189,7 @@
         </button>
     </nav>
 
-    <!-- CACHE BUSTER V20 -->
-    <script src="app.js?v=20"></script>
+    <!-- CACHE BUSTER V21 -->
+    <script src="app.js?v=21"></script>
 </body>
 </html>
