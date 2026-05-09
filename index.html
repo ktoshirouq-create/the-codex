@@ -8,6 +8,226 @@
     <link rel="icon" type="image/png" href="icon-512.png">
     <link rel="apple-touch-icon" href="icon-512.png">
     
+    <link rel="stylesheet" href="styles.css?v=25">
+</head>
+<body>
+    <div id="loader" class="loader-overlay"><span class="loader-text">SYNCING CODEX...</span></div>
+
+    <div id="selection-modal" class="custom-modal hidden">
+        <div class="modal-content glass-panel" id="modal-content-area">
+            <div class="drag-handle"></div>
+            <div class="modal-header" id="modal-drag-zone">
+                <h3 id="selection-modal-title" class="text-gold" style="letter-spacing: 2px;">SELECT</h3>
+                <button id="close-selection-modal" class="action-btn" style="font-size:2.2rem; line-height:0.5; font-weight:300;">&times;</button>
+            </div>
+            <div id="selection-modal-list" class="modal-list"></div>
+        </div>
+    </div>
+
+    <header class="top-bar">
+        <h1 class="brand">THE CODEX</h1>
+        <button id="edit-toggle" class="lock-btn">LOCKED</button>
+    </header>
+
+    <div id="ptr-indicator" class="ptr-indicator">↓ PULL TO REFRESH ↓</div>
+
+    <main class="content-area" id="scroll-area">
+        
+        <section id="codex-module" class="module active">
+            <div id="admin-parser-ui" class="card glass-panel edit-panel hidden">
+                <h2 class="card-title text-gold">SMART PARSER</h2>
+                <input type="text" id="spec-title-input" class="premium-text-input" placeholder="Cocktail Title">
+                <textarea id="keep-paste-area" class="premium-text-input" placeholder="Paste Keep recipe here..." rows="4"></textarea>
+                <button id="parse-btn" class="btn-secondary">PARSE SPEC</button>
+                <div id="staging-area" class="hidden" style="margin-top: 20px;">
+                    <h3 class="zone-header">STAGING REVIEW</h3>
+                    <div id="staging-list"></div>
+                    <button id="sync-vault-btn" class="btn-primary burgundy-btn" style="margin-top: 20px;">SYNC TO VAULT</button>
+                </div>
+            </div>
+
+            <div class="card glass-panel" style="padding: 25px 15px;">
+                <h2 class="card-title text-muted border-bottom pb-10" style="padding-left: 5px;">DATABASE</h2>
+                <input type="text" id="vault-search" class="search-pill w-100" placeholder="Search Specs & Batches...">
+                <div id="managed-vault-list"></div>
+            </div>
+        </section>
+
+        <section id="lab-module" class="module">
+            <div class="card glass-panel">
+                <h2 class="card-title text-gold">ABV CALCULATOR</h2>
+                <button id="btn-abv-spec" class="premium-basic-input custom-select-btn w-100 mb-20 text-muted">Select Spec...</button>
+                <div id="abv-ing-container" class="hidden mb-20">
+                    <h3 class="zone-header">BASE INGREDIENTS (ABV %)</h3>
+                    <div id="abv-ing-list"></div>
+                    <div class="flex-row mt-20" style="align-items: center; justify-content: space-between; border-top: 1px solid #333; padding-top: 15px;">
+                        <label class="text-muted text-sm">Target Dilution</label>
+                        <div class="stepper-control mini-stepper" style="width: 120px;">
+                            <button id="abv-dil-minus" class="stepper-btn">−</button>
+                            <span id="abv-dil-val" class="stepper-value">20%</span>
+                            <button id="abv-dil-plus" class="stepper-btn">+</button>
+                        </div>
+                    </div>
+                    <button id="calc-abv-btn" class="btn-primary mt-20 cyan-btn">CALCULATE FINAL ABV</button>
+                    <div id="abv-results" class="output-container mt-20"></div>
+                </div>
+            </div>
+
+            <div class="card glass-panel">
+                <h2 class="card-title text-gold">FAT & PROTEIN WASHING</h2>
+                <div class="pill-group">
+                    <button class="wash-pill active" data-val="milk">MILK PUNCH</button>
+                    <button class="wash-pill" data-val="fat">FAT WASH</button>
+                </div>
+                <div id="ui-milk-wash">
+                    <div class="input-group">
+                        <label class="text-muted text-sm mb-10" style="display:block">Total Punch Volume (ml)</label>
+                        <div class="massive-input"><input type="number" id="milk-punch-vol" value="1000"></div>
+                    </div>
+                </div>
+                <div id="ui-fat-wash" class="hidden">
+                    <button id="btn-fat-type" class="premium-basic-input custom-select-btn w-100 mb-20">Standard (Butter / Coconut Oil)</button>
+                    <div class="massive-input"><input type="number" id="fat-spirit-vol" value="700"></div>
+                </div>
+                <button id="calc-wash-btn" class="btn-secondary mt-20">CALCULATE WASH</button>
+                <div id="wash-results" class="output-container mt-20"></div>
+            </div>
+
+            <div class="card glass-panel">
+                <h2 class="card-title text-gold">LIQUID INTEL: ACID ADJUSTER</h2>
+                <div class="flex-row mb-20">
+                    <div class="half-width">
+                        <button id="btn-acid-base" class="premium-basic-input custom-select-btn w-100">Orange Juice (~1%)</button>
+                    </div>
+                    <div class="half-width">
+                        <button id="btn-acid-target" class="premium-basic-input custom-select-btn w-100">Lemon (6% Citric)</button>
+                    </div>
+                </div>
+                <div class="massive-input"><input type="number" id="acid-vol" value="1000"></div>
+                <button id="calc-acid-btn" class="btn-secondary mt-20">ADJUST ACID</button>
+                <div id="acid-results" class="output-container mt-20"></div>
+            </div>
+            
+            <div class="card glass-panel">
+                <h2 class="card-title text-gold">MODIFIER ENGINE</h2>
+                <div class="input-group">
+                    <label class="text-muted text-sm mb-10" style="display:block">Strained Syrup Weight (g)</label>
+                    <div class="massive-input"><input type="number" id="mod-weight" value="1000"></div>
+                </div>
+                <div class="pill-group mt-20">
+                    <button class="mod-pill active" data-val="cordial">CORDIAL (ACID)</button>
+                    <button class="mod-pill" data-val="shrub">SHRUB (VINEGAR)</button>
+                </div>
+                <button id="calc-mod-btn" class="btn-secondary">CALCULATE FINISH</button>
+                <div id="mod-results" class="output-container mt-20"></div>
+            </div>
+        </section>
+
+        <section id="scale-module" class="module">
+            <div class="card glass-panel">
+                <h2 class="card-title text-gold">FORWARD BATCH (EVENTS)</h2>
+                <button id="btn-forward-spec" class="premium-basic-input custom-select-btn w-100 mb-20 text-muted">Select Spec...</button>
+                <div class="flex-row">
+                    <div class="half-width">
+                        <div class="stepper-control mt-10">
+                            <button id="fd-minus" class="stepper-btn">−</button>
+                            <span id="fd-val" class="stepper-value">20</span>
+                            <button id="fd-plus" class="stepper-btn">+</button>
+                        </div>
+                    </div>
+                    <div class="half-width">
+                        <div class="stepper-control mt-10">
+                            <button id="dil-minus" class="stepper-btn">−</button>
+                            <span id="dil-val" class="stepper-value">20%</span>
+                            <button id="dil-plus" class="stepper-btn">+</button>
+                        </div>
+                    </div>
+                </div>
+                <button id="calc-forward-btn" class="btn-primary mt-20">CALCULATE BATCH</button>
+                <div id="forward-results" class="output-container mt-20"></div>
+            </div>
+        </section>
+
+        <section id="law-module" class="module">
+            <div class="card glass-panel" style="border-top: 3px solid #ff4444; background: rgba(255, 68, 68, 0.05);">
+                <h2 class="card-title" style="color: #ff4444; margin-bottom: 15px;">BOUNCER QUICK-CHECK</h2>
+                <div class="flex-row" style="margin-bottom: 20px;">
+                    <div class="half-width">
+                        <span class="text-muted text-xs">BEER/WINE (18+)</span>
+                        <div id="date-18" style="font-size: 1.4rem; font-weight: 800; color: #fff;">...</div>
+                    </div>
+                    <div class="half-width" style="border-left: 1px solid #333; padding-left: 15px;">
+                        <span class="text-muted text-xs">SPIRITS (20+)</span>
+                        <div id="date-20" style="font-size: 1.4rem; font-weight: 800; color: var(--nodee-gold);">...</div>
+                    </div>
+                </div>
+                <div class="text-muted text-xs">Born on or BEFORE today's date in these years to be legal.</div>
+            </div>
+
+            <div class="card glass-panel">
+                <h2 class="card-title text-gold">ALCOHOL GROUPS</h2>
+                <div class="law-table">
+                    <div class="law-row"><span class="law-tag">G1</span><span>2.5% - 4.7% ABV (Beer/Cider)</span></div>
+                    <div class="law-row"><span class="law-tag">G2</span><span>4.7% - 22% ABV (Wine/Strong Beer)</span></div>
+                    <div class="law-row"><span class="law-tag" style="background:var(--nodee-gold); color:#000;">G3</span><span>22% - 60% ABV (Spirits)</span></div>
+                </div>
+            </div>
+
+            <div class="card glass-panel">
+                <h2 class="card-title text-gold">LEGAL REGS (SERVING)</h2>
+                
+                <h3 class="zone-header">AGE REQUIREMENTS</h3>
+                <ul class="law-list">
+                    <li>Must be <strong>18+</strong> to buy/serve Groups 1 & 2.</li>
+                    <li>Must be <strong>20+</strong> to buy/serve Group 3 (Spirits).</li>
+                    <li>Staff must demand ID in any case of doubt.</li>
+                    <li>Ensure minors do not drink alcohol served to others.</li>
+                </ul>
+
+                <h3 class="zone-header">INTOXICATION & DISCOUNTS</h3>
+                <ul class="law-list">
+                    <li>Forbidden to serve anyone "obviously under the influence".</li>
+                    <li>Forbidden to serve alcohol in a manner that assumes the person will become obviously under the influence.</li>
+                    <li><strong>Group Rule:</strong> If one in a group is drunk, nobody in that group gets served until the drunk person is removed.</li>
+                    <li>Offering special discounts on alcohol to consumers is strictly prohibited.</li>
+                </ul>
+
+                <h3 class="zone-header">HOUSE RULES</h3>
+                <ul class="law-list">
+                    <li>No consumption of outside alcohol on premises.</li>
+                    <li>No taking drinks away from the bar area.</li>
+                    <li><strong>Total Advertising Ban:</strong> The advertising of alcoholic beverages is completely prohibited.</li>
+                </ul>
+
+                <h3 class="zone-header">SERVING TIMES (NATIONAL)</h3>
+                <ul class="law-list">
+                    <li><strong>Spirits (Cat 3):</strong> Allowed 13:00 to 24:00. Strictly prohibited 03:00 to 13:00.</li>
+                    <li><strong>Beer/Wine:</strong> Allowed 08:00 to 01:00. Strictly prohibited 03:00 to 06:00.</li>
+                    <li><strong>Clearance:</strong> All alcohol consumption must cease no later than 30 mins after serving hours expire.</li>
+                </ul>
+            </div>
+        </section>
+    </main>
+
+    <nav class="bottom-nav">
+        <button class="nav-tab active" data-target="codex-module"><span class="nav-icon">📖</span><span class="nav-label">CODEX</span></button>
+        <button class="nav-tab" data-target="lab-module"><span class="nav-icon">🧪</span><span class="nav-label">LAB</span></button>
+        <button class="nav-tab" data-target="scale-module"><span class="nav-icon">⚖️</span><span class="nav-label">SCALE</span></button>
+        <button class="nav-tab" data-target="law-module"><span class="nav-icon">📜</span><span class="nav-label">LAW</span></button>
+    </nav>
+
+    <script src="app.js?v=25"></script>
+</body>
+</html><!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>The Codex</title>
+    
+    <link rel="icon" type="image/png" href="icon-512.png">
+    <link rel="apple-touch-icon" href="icon-512.png">
+    
     <!-- CACHE BUSTER V23 -->
     <link rel="stylesheet" href="styles.css?v=23">
 </head>
