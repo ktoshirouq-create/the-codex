@@ -153,3 +153,13 @@ textarea.premium-text-input { font-weight: normal; line-height: 1.5; resize: non
 .nav-icon { font-size: 1.4rem; margin-bottom: 4px; }
 .nav-label { font-size: 0.7rem; font-weight: 800; letter-spacing: 1px; }
 .nav-tab.active { color: var(--nodee-gold); }
+/* Wash & Mod Pills */
+.wash-pill, .mod-pill { flex: 1; border: 1px solid #444; color: var(--text-muted); padding: 12px 0; border-radius: 12px; font-size: 0.9rem; font-weight: 700; text-align: center; transition: all 0.2s; }
+.wash-pill.active, .mod-pill.active { background: var(--nodee-gold); border-color: var(--nodee-gold); color: var(--bg-oled); }
+
+/* ABV Inputs */
+.abv-input-row { display: flex; justify-content: space-between; align-items: center; border-bottom: 1px solid rgba(255,255,255,0.05); padding: 10px 0; }
+.abv-input-row:last-child { border-bottom: none; }
+.abv-ing-name { font-size: 0.95rem; color: var(--text-main); font-weight: 500; text-transform: capitalize;}
+.abv-number-input { background: transparent; border: none; border-bottom: 1px solid #555; color: var(--nodee-gold); font-size: 1.4rem; text-align: center; width: 60px; outline: none; transition: border-color 0.3s; }
+.abv-number-input:focus { border-color: var(--nodee-gold); }
