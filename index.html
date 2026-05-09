@@ -82,12 +82,12 @@
                 <div id="ui-milk-wash">
                     <div class="input-group">
                         <label class="text-muted text-sm mb-10" style="display:block">Total Punch Volume (ml)</label>
-                        <div class="massive-input"><input type="number" id="milk-punch-vol" value="1000"></div>
+                        <div class="massive-input"><input type="number" id="milk-punch-vol" placeholder="1000" value=""></div>
                     </div>
                 </div>
                 <div id="ui-fat-wash" class="hidden">
                     <button id="btn-fat-type" class="premium-basic-input custom-select-btn w-100 mb-20">Standard (Butter / Coconut Oil)</button>
-                    <div class="massive-input"><input type="number" id="fat-spirit-vol" value="700"></div>
+                    <div class="massive-input"><input type="number" id="fat-spirit-vol" placeholder="700" value=""></div>
                 </div>
                 <button id="calc-wash-btn" class="btn-secondary mt-20">CALCULATE WASH</button>
                 <div id="wash-results" class="output-container mt-20"></div>
@@ -103,7 +103,7 @@
                         <button id="btn-acid-target" class="premium-basic-input custom-select-btn w-100">Lemon (6% Citric)</button>
                     </div>
                 </div>
-                <div class="massive-input"><input type="number" id="acid-vol" value="1000"></div>
+                <div class="massive-input"><input type="number" id="acid-vol" placeholder="1000" value=""></div>
                 <button id="calc-acid-btn" class="btn-secondary mt-20">ADJUST ACID</button>
                 <div id="acid-results" class="output-container mt-20"></div>
             </div>
@@ -112,7 +112,7 @@
                 <h2 class="card-title text-gold">MODIFIER ENGINE</h2>
                 <div class="input-group">
                     <label class="text-muted text-sm mb-10" style="display:block">Strained Syrup Weight (g)</label>
-                    <div class="massive-input"><input type="number" id="mod-weight" value="1000"></div>
+                    <div class="massive-input"><input type="number" id="mod-weight" placeholder="1000" value=""></div>
                 </div>
                 <div class="pill-group mt-20">
                     <button class="mod-pill active" data-val="cordial">CORDIAL (ACID)</button>
@@ -162,7 +162,7 @@
                 <div id="reverse-vol-container" class="hidden">
                     <div class="input-group">
                         <label class="text-muted text-sm mb-10" style="display:block">Available Volume (ml)</label>
-                        <div class="massive-input"><input type="number" id="reverse-vol" value="700"></div>
+                        <div class="massive-input"><input type="number" id="reverse-vol" placeholder="700" value=""></div>
                     </div>
                     <button id="calc-reverse-btn" class="btn-primary burgundy-btn mt-20">CALCULATE MAX YIELD</button>
                     <div id="reverse-results" class="output-container mt-20"></div>
@@ -189,9 +189,9 @@
             <div class="card glass-panel">
                 <h2 class="card-title text-gold">ALCOHOL GROUPS</h2>
                 <div class="law-table">
-                    <div class="law-row"><span class="law-tag">G1</span><span>2.5% - 4.7% ABV (Beer/Cider)</span></div>
-                    <div class="law-row"><span class="law-tag">G2</span><span>4.7% - 22% ABV (Wine/Strong Beer)</span></div>
-                    <div class="law-row"><span class="law-tag" style="background:var(--nodee-gold); color:#000;">G3</span><span>22% - 60% ABV (Spirits)</span></div>
+                    <div class="law-row"><span class="law-tag">G1</span><span>2.5% to 4.7% ABV (Beer/Cider)</span></div>
+                    <div class="law-row"><span class="law-tag">G2</span><span>>4.7% to &lt;22% ABV (Wine/Beer)</span></div>
+                    <div class="law-row"><span class="law-tag" style="background:var(--nodee-gold); color:#000;">G3</span><span>22% to 60% ABV (Spirits)</span></div>
                 </div>
             </div>
 
