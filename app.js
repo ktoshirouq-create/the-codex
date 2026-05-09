@@ -5,8 +5,23 @@ document.addEventListener('DOMContentLoaded', () => {
     let recipeVault = {};
     let parsedStagingData = []; 
 
+    // Global Memory States (To prevent typing during rush)
+    window.lastUsedRound = 1;
+    let fDrinks = 20;
+    let fDilution = 20;
+
+    // Custom Modal State
+    let activeSpecSelect = null; 
+    let activeIngSelect = null;
+
     // HELPERS
     const capitalize = (str) => str.toLowerCase().replace(/\b\w/g, c => c.toUpperCase());
+    const triggerHaptic = (type = 'light') => {
+        if (!navigator.vibrate) return;
+        if (type === 'light') navigator.vibrate(30);
+        if (type === 'heavy') navigator.vibrate([80, 40, 80]);
+        if (type === 'error') navigator.vibrate([50, 50, 50, 50]);
+    };
     
     const showLoader = (msg) => {
         document.querySelector('.loader-text').innerText = msg;
@@ -18,6 +33,32 @@ document.addEventListener('DOMContentLoaded', () => {
         const l = document.getElementById('loader');
         l.style.opacity = '0'; setTimeout(() => l.style.display = 'none', 300);
     };
+
+    // CUSTOM MODAL LOGIC (Replaces Native Dropdowns)
+    function openSelectModal(title, options, onSelect) {
+        triggerHaptic('light');
+        document.getElementById('selection-modal-title').innerText = title;
+        const list = document.getElementById('selection-modal-list');
+        list.innerHTML = '';
+        
+        options.forEach(opt => {
+            const item = document.createElement('div');
+            item.className = 'modal-item';
+            item.innerText = opt.label;
+            item.addEventListener('click', () => {
+                triggerHaptic('light');
+                onSelect(opt.value, opt.label, opt.data);
+                document.getElementById('selection-modal').classList.add('hidden');
+            });
+            list.appendChild(item);
+        });
+        document.getElementById('selection-modal').classList.remove('hidden');
+    }
+
+    document.getElementById('close-selection-modal').addEventListener('click', () => {
+        triggerHaptic('light');
+        document.getElementById('selection-modal').classList.add('hidden');
+    });
 
     // INIT DB
     async function loadVault() {
@@ -37,7 +78,6 @@ document.addEventListener('DOMContentLoaded', () => {
             });
 
             renderVault();
-            populateScaleDropdowns();
             hideLoader();
         } catch (e) {
             console.error(e);
@@ -66,22 +106,27 @@ document.addEventListener('DOMContentLoaded', () => {
             const vItem = document.createElement('div');
             vItem.className = 'vault-item';
             
-            // Build ingredients HTML
+            // Build ingredients HTML with integrated Stepper Memory
             let ingHtml = `<div class="vault-details" id="details-${cocktail.replace(/\s+/g, '')}">`;
             
-            // Inject Service Multiplier
             ingHtml += `
                 <div class="service-multiplier" onclick="event.stopPropagation()">
-                    <span class="text-sm fw-bold">SERVICE MULTIPLIER:</span>
-                    <input type="number" value="1" min="1" oninput="multiplyRound('${cocktail}', this.value)">
+                    <span class="text-sm fw-bold text-muted">ROUND MULTIPLIER:</span>
+                    <div class="stepper-control mini-stepper" style="width: auto;">
+                        <button class="stepper-btn" onclick="updateRound('${cocktail.replace(/\s+/g, '')}', -1)">−</button>
+                        <span class="stepper-value" id="mult-val-${cocktail.replace(/\s+/g, '')}">${window.lastUsedRound}</span>
+                        <button class="stepper-btn" onclick="updateRound('${cocktail.replace(/\s+/g, '')}', 1)">+</button>
+                    </div>
                 </div>
                 <div id="recipe-list-${cocktail.replace(/\s+/g, '')}">
             `;
 
             recipeVault[cocktail].forEach(ing => {
-                ingHtml += `<div class="result-row ${ing.color}"><span class="ing-name">${ing.name}</span><span class="ing-amount base-amt" data-base="${ing.amount}">${ing.amount}ml</span></div>`;
+                // Pre-multiply by the global lastUsedRound so expanding instantly matches your flow
+                const activeAmt = ing.amount * window.lastUsedRound;
+                ingHtml += `<div class="result-row ${ing.color}"><span class="ing-name">${ing.name}</span><span class="ing-amount base-amt" data-base="${ing.amount}">${activeAmt.toFixed(1).replace(/\.0$/, '')}ml</span></div>`;
             });
-            ingHtml += '</div></div>'; // Close lists
+            ingHtml += '</div></div>';
 
             vItem.innerHTML = `
                 <div class="vault-header">
@@ -91,24 +136,34 @@ document.addEventListener('DOMContentLoaded', () => {
                 ${ingHtml}
             `;
             
-            vItem.addEventListener('click', () => vItem.classList.toggle('expanded'));
+            vItem.addEventListener('click', () => {
+                triggerHaptic('light');
+                vItem.classList.toggle('expanded');
+            });
             list.appendChild(vItem);
         });
         
-        // Re-apply admin visibility if unlocked
         if(document.getElementById('edit-toggle').innerText !== 'LOCKED') {
             document.querySelectorAll('.admin-controls').forEach(el => el.classList.remove('hidden'));
         }
     }
 
-    // LIVE MULTIPLIER (Service Round)
-    window.multiplyRound = (cocktail, multiplier) => {
-        let mult = parseFloat(multiplier) || 1;
-        const container = document.getElementById(`recipe-list-${cocktail.replace(/\s+/g, '')}`);
+    // LIVE MULTIPLIER (Service Round Stepper Engine)
+    window.updateRound = (cocktailId, change) => {
+        triggerHaptic('light');
+        const valSpan = document.getElementById(`mult-val-${cocktailId}`);
+        let current = parseInt(valSpan.innerText) || 1;
+        let next = current + change;
+        if(next < 1) next = 1;
+        
+        valSpan.innerText = next;
+        window.lastUsedRound = next; // Save global state so next recipe starts here
+
+        const container = document.getElementById(`recipe-list-${cocktailId}`);
         const amounts = container.querySelectorAll('.base-amt');
         amounts.forEach(el => {
             const base = parseFloat(el.getAttribute('data-base'));
-            el.innerText = `${(base * mult).toFixed(1).replace(/\.0$/, '')}ml`;
+            el.innerText = `${(base * next).toFixed(1).replace(/\.0$/, '')}ml`;
         });
     };
 
@@ -124,6 +179,7 @@ document.addEventListener('DOMContentLoaded', () => {
     // DB DELETE
     window.deleteSpec = async (name) => {
         if (!confirm(`Delete '${name}'?`)) return;
+        triggerHaptic('heavy');
         showLoader("DELETING...");
         try {
             await fetch(API_URL, { method: 'POST', body: JSON.stringify({ action: 'delete', cocktailName: name }) });
@@ -133,13 +189,13 @@ document.addEventListener('DOMContentLoaded', () => {
 
     // --- SMART PARSER LOGIC ---
     document.getElementById('parse-btn').addEventListener('click', () => {
+        triggerHaptic('light');
         const title = capitalize(document.getElementById('spec-title-input').value.trim());
         const text = document.getElementById('keep-paste-area').value;
         if(!title || !text) return alert("Need Title and Recipe Text.");
 
         parsedStagingData = [];
         const lines = text.split('\n');
-        // Regex looks for a number at start, optional unit, then text.
         const regex = /^(\d+(?:\.\d+)?)\s*(?:ml|g|oz|dash|dashes)?\s+(.+)$/i;
 
         lines.forEach(line => {
@@ -148,7 +204,6 @@ document.addEventListener('DOMContentLoaded', () => {
                 const amt = parseFloat(match[1]);
                 const name = capitalize(match[2].trim());
                 
-                // Auto-Guess Category
                 let tag = 'amber-glow'; // Default Spirit
                 const lowName = name.toLowerCase();
                 if (lowName.includes('syrup') || lowName.includes('sugar') || lowName.includes('agave') || lowName.includes('honey')) {
@@ -171,6 +226,7 @@ document.addEventListener('DOMContentLoaded', () => {
         
         if(parsedStagingData.length === 0) {
             container.classList.add('hidden');
+            triggerHaptic('error');
             return alert("No ingredients found. Check format (e.g., '30ml Gin').");
         }
 
@@ -200,6 +256,7 @@ document.addEventListener('DOMContentLoaded', () => {
     };
 
     window.cycleCategory = (index) => {
+        triggerHaptic('light');
         const tags = ['amber-glow', 'neon-cyan', 'magenta-glow'];
         let curr = tags.indexOf(parsedStagingData[index].categoryTag);
         let next = (curr + 1) % tags.length;
@@ -209,11 +266,11 @@ document.addEventListener('DOMContentLoaded', () => {
 
     document.getElementById('sync-vault-btn').addEventListener('click', async () => {
         if(parsedStagingData.length === 0) return;
+        triggerHaptic('heavy');
         showLoader("PUSHING TO CODEX...");
         try {
             await fetch(API_URL, { method: 'POST', body: JSON.stringify(parsedStagingData) });
             
-            // Clean up
             document.getElementById('spec-title-input').value = '';
             document.getElementById('keep-paste-area').value = '';
             document.getElementById('staging-area').classList.add('hidden');
@@ -223,27 +280,51 @@ document.addEventListener('DOMContentLoaded', () => {
         } catch (e) { hideLoader(); }
     });
 
-    // --- LAB: ACID ADJUSTER ---
+    // --- LAB: CUSTOM DROPDOWNS ---
+    let activeAcidBase = { val: 'orange', multCitric: 0.05, multMalic: 0 };
+    let activeAcidTarget = 'lemon'; // or 'lime'
+
+    document.getElementById('btn-acid-base').addEventListener('click', () => {
+        const opts = [
+            { label: 'Orange Juice (~1%)', value: 'orange' },
+            { label: 'Grapefruit (~2%)', value: 'grapefruit' },
+            { label: 'Pineapple (~0.8%)', value: 'pineapple' }
+        ];
+        openSelectModal('SELECT BASE LIQUID', opts, (val, label) => {
+            activeAcidBase.val = val;
+            document.getElementById('btn-acid-base').innerText = label;
+            document.getElementById('btn-acid-base').style.color = "var(--text-main)";
+        });
+    });
+
+    document.getElementById('btn-acid-target').addEventListener('click', () => {
+        const opts = [
+            { label: 'Lemon (6% Citric)', value: 'lemon' },
+            { label: 'Lime (4% Cit, 2% Mal)', value: 'lime' }
+        ];
+        openSelectModal('SELECT TARGET ACIDITY', opts, (val, label) => {
+            activeAcidTarget = val;
+            document.getElementById('btn-acid-target').innerText = label;
+            document.getElementById('btn-acid-target').style.color = "var(--text-main)";
+        });
+    });
+
+    // --- LAB: ACID ADJUSTER MATH ---
     document.getElementById('calc-acid-btn').addEventListener('click', () => {
+        triggerHaptic('heavy');
         const vol = parseFloat(document.getElementById('acid-vol').value) || 0;
-        const base = document.getElementById('acid-base').value;
-        const target = document.getElementById('acid-target').value;
         const res = document.getElementById('acid-results');
-        
         if(!vol) return;
 
-        // Base Acids approximation: OJ 1%, GF 2%, PA 0.8%
-        // Target Lemon: 6% Citric. Target Lime: 4% Citric, 2% Malic.
         let cit = 0, mal = 0;
-
-        if (target === 'lemon') {
-            if(base === 'orange') cit = vol * 0.05;
-            if(base === 'grapefruit') cit = vol * 0.04;
-            if(base === 'pineapple') cit = vol * 0.052;
-        } else { // Lime
-            if(base === 'orange') { cit = vol * 0.03; mal = vol * 0.02; }
-            if(base === 'grapefruit') { cit = vol * 0.02; mal = vol * 0.02; }
-            if(base === 'pineapple') { cit = vol * 0.032; mal = vol * 0.02; }
+        if (activeAcidTarget === 'lemon') {
+            if(activeAcidBase.val === 'orange') cit = vol * 0.05;
+            if(activeAcidBase.val === 'grapefruit') cit = vol * 0.04;
+            if(activeAcidBase.val === 'pineapple') cit = vol * 0.052;
+        } else {
+            if(activeAcidBase.val === 'orange') { cit = vol * 0.03; mal = vol * 0.02; }
+            if(activeAcidBase.val === 'grapefruit') { cit = vol * 0.02; mal = vol * 0.02; }
+            if(activeAcidBase.val === 'pineapple') { cit = vol * 0.032; mal = vol * 0.02; }
         }
 
         res.innerHTML = `
@@ -256,6 +337,7 @@ document.addEventListener('DOMContentLoaded', () => {
     const modPills = document.querySelectorAll('.mod-pill');
     let modType = 'cordial';
     modPills.forEach(p => p.addEventListener('click', (e) => {
+        triggerHaptic('light');
         modPills.forEach(btn => btn.classList.remove('active'));
         e.target.classList.add('active');
         modType = e.target.getAttribute('data-val');
@@ -265,12 +347,12 @@ document.addEventListener('DOMContentLoaded', () => {
     }));
 
     document.getElementById('calc-mod-btn').addEventListener('click', () => {
+        triggerHaptic('heavy');
         const weight = parseFloat(document.getElementById('mod-weight').value) || 0;
         const res = document.getElementById('mod-results');
         if(!weight) return;
 
         if (modType === 'cordial') {
-            // 1.5% total acid. 3:1 Citric:Malic
             const totalAcid = weight * 0.015;
             const cit = totalAcid * 0.75;
             const mal = totalAcid * 0.25;
@@ -280,7 +362,6 @@ document.addEventListener('DOMContentLoaded', () => {
                 <div class="result-row magenta-glow"><span class="ing-name">Malic Acid</span><span class="ing-amount">${mal.toFixed(1)}g</span></div>
             `;
         } else {
-            // Shrub: Vinegar is 50% of syrup weight
             const vin = weight * 0.5;
             res.innerHTML = `
                 <h3 class="zone-header">SHRUB LIQUID</h3>
@@ -289,89 +370,113 @@ document.addEventListener('DOMContentLoaded', () => {
         }
     });
 
-    // --- SCALE: BATCHING ---
-    function populateScaleDropdowns() {
-        const specs = Object.keys(recipeVault);
-        const fSelect = document.getElementById('forward-spec-select');
-        const rSelect = document.getElementById('reverse-spec-select');
-        
-        let opts = '<option value="">Select Spec...</option>';
-        specs.forEach(s => opts += `<option value="${s}">${s}</option>`);
-        
-        fSelect.innerHTML = opts;
-        rSelect.innerHTML = opts;
-    }
+    // --- SCALE: BATCHING & STEPPERS ---
+    const updateScaleUI = () => {
+        document.getElementById('fd-val').innerText = fDrinks;
+        document.getElementById('dil-val').innerText = fDilution + '%';
+    };
 
-    // Forward Batch
+    document.getElementById('fd-minus').addEventListener('click', () => { triggerHaptic('light'); if(fDrinks > 1) { fDrinks--; updateScaleUI(); } });
+    document.getElementById('fd-plus').addEventListener('click', () => { triggerHaptic('light'); fDrinks++; updateScaleUI(); });
+    
+    document.getElementById('dil-minus').addEventListener('click', () => { triggerHaptic('light'); if(fDilution > 0) { fDilution--; updateScaleUI(); } });
+    document.getElementById('dil-plus').addEventListener('click', () => { triggerHaptic('light'); fDilution++; updateScaleUI(); });
+
+    window.updateDilution = (val) => {
+        triggerHaptic('light');
+        fDilution = val;
+        updateScaleUI();
+    };
+
+    // Forward Batch Logic
+    document.getElementById('btn-forward-spec').addEventListener('click', () => {
+        const specs = Object.keys(recipeVault).map(s => ({label: s, value: s}));
+        openSelectModal('SELECT SPEC FOR BATCH', specs, (val, label) => {
+            activeSpecSelect = val;
+            document.getElementById('btn-forward-spec').innerText = label;
+            document.getElementById('btn-forward-spec').style.color = "var(--text-main)";
+            document.getElementById('btn-forward-spec').classList.remove('text-muted');
+        });
+    });
+
     document.getElementById('calc-forward-btn').addEventListener('click', () => {
-        const specName = document.getElementById('forward-spec-select').value;
-        const drinks = parseFloat(document.getElementById('forward-drinks').value) || 0;
-        const dilPct = parseFloat(document.getElementById('forward-dilution').value) || 0;
+        triggerHaptic('heavy');
         const res = document.getElementById('forward-results');
+        if(!activeSpecSelect || fDrinks <= 0) return;
         
-        if(!specName || drinks <= 0) return;
-        const spec = recipeVault[specName];
-        
+        const spec = recipeVault[activeSpecSelect];
         let html = '<h3 class="zone-header">BATCH YIELD</h3>';
         let totalVol = 0;
 
         spec.forEach(ing => {
-            const amt = ing.amount * drinks;
+            const amt = ing.amount * fDrinks;
             totalVol += amt;
             html += `<div class="result-row ${ing.color}"><span class="ing-name">${ing.name}</span><span class="ing-amount">${amt.toFixed(0)}ml</span></div>`;
         });
 
-        if (dilPct > 0) {
-            const water = totalVol * (dilPct / 100);
+        if (fDilution > 0) {
+            const water = totalVol * (fDilution / 100);
             totalVol += water;
-            html += `<div class="result-row"><span class="ing-name text-muted">Filtered Water (${dilPct}%)</span><span class="ing-amount">${water.toFixed(0)}ml</span></div>`;
+            html += `<div class="result-row"><span class="ing-name text-muted">Filtered Water (${fDilution}%)</span><span class="ing-amount text-muted">${water.toFixed(0)}ml</span></div>`;
         }
         
         html += `<div class="result-row mt-10"><span class="ing-name text-gold fw-bold">TOTAL BATCH VOLUME</span><span class="ing-amount">${totalVol.toFixed(0)}ml</span></div>`;
         res.innerHTML = html;
     });
 
-    // Reverse Batch
-    document.getElementById('reverse-spec-select').addEventListener('change', (e) => {
-        const specName = e.target.value;
-        const ingSelect = document.getElementById('reverse-ing-select');
-        const volCont = document.getElementById('reverse-vol-container');
-        document.getElementById('reverse-results').innerHTML = '';
-        
-        if(!specName) { ingSelect.classList.add('hidden'); volCont.classList.add('hidden'); return; }
-        
-        const spec = recipeVault[specName];
-        let opts = '<option value="">Select Limiting Ingredient...</option>';
-        spec.forEach(ing => opts += `<option value="${ing.name}" data-amt="${ing.amount}">${ing.name} (${ing.amount}ml)</option>`);
-        
-        ingSelect.innerHTML = opts;
-        ingSelect.classList.remove('hidden');
+    // Reverse Batch Logic
+    let activeRevSpec = null;
+    let activeRevIng = null;
+    let activeRevIngAmt = 0;
+
+    document.getElementById('btn-reverse-spec').addEventListener('click', () => {
+        const specs = Object.keys(recipeVault).map(s => ({label: s, value: s}));
+        openSelectModal('SELECT SPEC', specs, (val, label) => {
+            activeRevSpec = val;
+            document.getElementById('btn-reverse-spec').innerText = label;
+            document.getElementById('btn-reverse-spec').style.color = "var(--text-main)";
+            document.getElementById('btn-reverse-spec').classList.remove('text-muted');
+            
+            // Reset Ingredient select
+            activeRevIng = null;
+            document.getElementById('btn-reverse-ing').innerText = "Select Limiting Ingredient...";
+            document.getElementById('btn-reverse-ing').classList.add('text-muted');
+            document.getElementById('btn-reverse-ing').classList.remove('hidden');
+            document.getElementById('reverse-vol-container').classList.add('hidden');
+        });
     });
 
-    document.getElementById('reverse-ing-select').addEventListener('change', (e) => {
-        if(e.target.value) document.getElementById('reverse-vol-container').classList.remove('hidden');
-        else document.getElementById('reverse-vol-container').classList.add('hidden');
+    document.getElementById('btn-reverse-ing').addEventListener('click', () => {
+        if(!activeRevSpec) return;
+        const spec = recipeVault[activeRevSpec];
+        const ings = spec.map(ing => ({label: `${ing.name} (${ing.amount}ml)`, value: ing.name, data: ing.amount}));
+        
+        openSelectModal('LIMITING INGREDIENT', ings, (val, label, amt) => {
+            activeRevIng = val;
+            activeRevIngAmt = amt;
+            document.getElementById('btn-reverse-ing').innerText = label;
+            document.getElementById('btn-reverse-ing').style.color = "var(--text-main)";
+            document.getElementById('btn-reverse-ing').classList.remove('text-muted');
+            document.getElementById('reverse-vol-container').classList.remove('hidden');
+        });
     });
 
     document.getElementById('calc-reverse-btn').addEventListener('click', () => {
-        const specName = document.getElementById('reverse-spec-select').value;
-        const sel = document.getElementById('reverse-ing-select');
-        const ingName = sel.value;
-        const baseAmt = parseFloat(sel.options[sel.selectedIndex].getAttribute('data-amt'));
+        triggerHaptic('heavy');
         const availVol = parseFloat(document.getElementById('reverse-vol').value) || 0;
         const res = document.getElementById('reverse-results');
         
-        if(!specName || !ingName || !baseAmt || availVol <= 0) return;
+        if(!activeRevSpec || !activeRevIng || availVol <= 0) return;
 
-        const maxDrinks = Math.floor(availVol / baseAmt);
-        const spec = recipeVault[specName];
+        const maxDrinks = Math.floor(availVol / activeRevIngAmt);
+        const spec = recipeVault[activeRevSpec];
         
         let html = `<h3 class="zone-header">MAX YIELD: ${maxDrinks} DRINKS</h3>`;
         
         spec.forEach(ing => {
             const reqAmt = ing.amount * maxDrinks;
             let displayAmt = `${reqAmt.toFixed(0)}ml`;
-            if(ing.name === ingName) displayAmt = `${reqAmt.toFixed(0)}ml <span class="text-muted text-sm">(Empty)</span>`;
+            if(ing.name === activeRevIng) displayAmt = `${reqAmt.toFixed(0)}ml <span class="text-muted text-sm">(Empty)</span>`;
             
             html += `<div class="result-row ${ing.color}"><span class="ing-name">${ing.name}</span><span class="ing-amount">${displayAmt}</span></div>`;
         });
@@ -379,13 +484,13 @@ document.addEventListener('DOMContentLoaded', () => {
         res.innerHTML = html;
     });
 
-
     // --- NAV & LOCK LOGIC ---
     const tabs = document.querySelectorAll('.nav-tab');
     const modules = document.querySelectorAll('.module');
 
     tabs.forEach(tab => {
         tab.addEventListener('click', (e) => {
+            triggerHaptic('light');
             const targetEl = e.currentTarget;
             tabs.forEach(t => t.classList.remove('active'));
             modules.forEach(m => m.classList.remove('active'));
@@ -397,6 +502,7 @@ document.addEventListener('DOMContentLoaded', () => {
 
     const lockBtn = document.getElementById('edit-toggle');
     lockBtn.addEventListener('click', () => {
+        triggerHaptic('light');
         if (lockBtn.innerText === 'LOCKED') {
             lockBtn.innerText = 'EDIT MODE';
             lockBtn.style.color = 'var(--nodee-gold)';
