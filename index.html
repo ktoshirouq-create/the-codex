@@ -8,7 +8,8 @@
     <link rel="icon" type="image/png" href="icon-512.png">
     <link rel="apple-touch-icon" href="icon-512.png">
     
-    <link rel="stylesheet" href="styles.css?v=17">
+    <!-- CACHE BUSTER V18 -->
+    <link rel="stylesheet" href="styles.css?v=18">
     <link rel="manifest" href="manifest.json">
 </head>
 <body>
@@ -119,6 +120,29 @@
                 <button id="calc-brix-btn" class="btn-primary burgundy-btn">CALCULATE SUGAR</button>
                 <div id="brix-results" class="output-container" style="margin-top: 20px;"></div>
             </div>
+
+            <!-- NEW BRIX CHEAT SHEET CARD -->
+            <div class="card spec-card glass-panel">
+                <h2 class="card-title">BRIX CHEAT SHEET</h2>
+                <table class="brix-table">
+                    <tr><td colspan="2" class="row-group" style="padding-top: 0;">WHITE / CANE / DEMERARA</td></tr>
+                    <tr><td>1 : 1 Ratio</td><td class="align-right">50 Brix</td></tr>
+                    <tr><td>1.5 : 1 Ratio</td><td class="align-right">60 Brix</td></tr>
+                    <tr><td>1.85 : 1 Ratio</td><td class="align-right brix-highlight">65 Brix</td></tr>
+                    <tr><td>2 : 1 Ratio</td><td class="align-right">66.6 Brix</td></tr>
+
+                    <tr><td colspan="2" class="row-group">HONEY (80 BRIX RAW)</td></tr>
+                    <tr><td>1 : 1 Ratio</td><td class="align-right">40 Brix</td></tr>
+                    <tr><td>1.5 : 1 Ratio</td><td class="align-right">48 Brix</td></tr>
+                    <tr><td>3 : 1 Ratio</td><td class="align-right">60 Brix</td></tr>
+                    <tr><td>5 : 1 Ratio</td><td class="align-right">66.6 Brix</td></tr>
+
+                    <tr><td colspan="2" class="row-group">AGAVE (75 BRIX RAW)</td></tr>
+                    <tr><td>1 : 1 Ratio</td><td class="align-right">37.5 Brix</td></tr>
+                    <tr><td>2 : 1 Ratio</td><td class="align-right">50 Brix</td></tr>
+                    <tr><td>4 : 1 Ratio</td><td class="align-right">60 Brix</td></tr>
+                </table>
+            </div>
         </section>
 
         <section id="vault-module" class="module">
@@ -168,6 +192,7 @@
 
     </main>
 
-    <script src="app.js?v=17"></script>
+    <!-- CACHE BUSTER V18 -->
+    <script src="app.js?v=18"></script>
 </body>
 </html>
