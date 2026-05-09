@@ -3,196 +3,178 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>Batching Calculator</title>
+    <title>The Codex</title>
     
     <link rel="icon" type="image/png" href="icon-512.png">
     <link rel="apple-touch-icon" href="icon-512.png">
     
-    <!-- CACHE BUSTER V18 -->
-    <link rel="stylesheet" href="styles.css?v=18">
-    <link rel="manifest" href="manifest.json">
+    <!-- CACHE BUSTER V19 -->
+    <link rel="stylesheet" href="styles.css?v=19">
 </head>
 <body>
-    <div id="loader" class="loader-overlay">
-        <span class="loader-text" style="color: var(--nodee-gold)">SYNCING VAULT...</span>
-    </div>
-
-    <div id="spec-modal" class="custom-modal hidden">
-        <div class="modal-content glass-panel">
-            <div class="modal-header">
-                <h3 style="color: var(--nodee-gold); letter-spacing: 2px;">SELECT COCKTAIL</h3>
-                <button id="close-modal" class="action-btn">CLOSE</button>
-            </div>
-            <div id="modal-list" class="modal-list"></div>
-        </div>
-    </div>
+    <div id="loader" class="loader-overlay"><span class="loader-text">SYNCING CODEX...</span></div>
 
     <header class="top-bar">
-        <h1 class="brand">BATCHING CALCULATOR</h1>
+        <h1 class="brand">THE CODEX</h1>
         <button id="edit-toggle" class="lock-btn">LOCKED</button>
     </header>
 
-    <nav class="module-nav">
-        <button class="nav-tab active" data-target="batch-module">BATCH</button>
-        <button class="nav-tab" data-target="prep-module">PREP</button>
-        <button class="nav-tab" data-target="vault-module">VAULT</button>
-    </nav>
-
-    <div id="ptr-indicator" class="ptr-indicator">↓ PULL TO SYNC ↓</div>
-
     <main class="content-area" id="scroll-area">
         
-        <section id="batch-module" class="module active">
-            <div id="service-ui">
-                <div class="card spec-card glass-panel">
-                    <button id="open-spec-modal" class="premium-text-input" style="text-align: left; padding: 15px 0;">Select Cocktail...</button>
-                    <input type="hidden" id="recipe-select" value="">
-                    
-                    <div class="input-group">
-                        <label id="yield-label">Target Yield (700ml BOTTLES)</label>
-                        <div class="yield-stepper">
-                            <button id="yield-minus" class="stepper-btn">−</button>
-                            <div class="massive-input" style="margin-bottom: 0;">
-                                <input type="number" id="target-yield" value="5" min="1" step="1">
-                            </div>
-                            <button id="yield-plus" class="stepper-btn">+</button>
-                        </div>
-                    </div>
-                    <button id="calc-batch-btn" class="btn-primary">CALCULATE BATCH</button>
+        <!-- ZONE 1: THE CODEX (Vault & Parser) -->
+        <section id="codex-module" class="module active">
+            
+            <!-- ADMIN: Smart Parser -->
+            <div id="admin-parser-ui" class="card glass-panel edit-panel hidden">
+                <h2 class="card-title text-gold">SMART PARSER</h2>
+                <input type="text" id="spec-title-input" class="premium-text-input" placeholder="Cocktail Title">
+                <textarea id="keep-paste-area" class="premium-text-input" placeholder="Paste Keep recipe here...&#10;e.g.&#10;30ml Campari&#10;30ml Gin" rows="4"></textarea>
+                <button id="parse-btn" class="btn-secondary">PARSE SPEC</button>
+
+                <div id="staging-area" class="hidden" style="margin-top: 20px;">
+                    <h3 class="zone-header">STAGING REVIEW</h3>
+                    <div id="staging-list"></div>
+                    <button id="sync-vault-btn" class="btn-primary burgundy-btn" style="margin-top: 20px;">SYNC TO VAULT</button>
                 </div>
-                <div id="batch-results" class="output-container"></div>
+            </div>
+
+            <!-- PUBLIC: Recipe Vault -->
+            <div class="card glass-panel">
+                <h2 class="card-title text-muted border-bottom pb-10">DATABASE</h2>
+                <input type="text" id="vault-search" class="premium-basic-input w-100" placeholder="Search Specs & Batches...">
+                <div id="managed-vault-list"></div>
             </div>
         </section>
 
-        <section id="prep-module" class="module">
-            <div class="card spec-card glass-panel">
-                <h2 class="card-title">SYRUP RATIO</h2>
-                
-                <div class="input-group">
-                    <label>Sweetener Type</label>
-                    <div class="pill-group">
-                        <button class="sweetener-pill active" data-val="demerara">DEMERARA</button>
-                        <button class="sweetener-pill" data-val="honey">HONEY</button>
+        <!-- ZONE 2: THE LAB (Prep & Modifiers) -->
+        <section id="lab-module" class="module">
+            <!-- ACID ADJUSTER -->
+            <div class="card glass-panel">
+                <h2 class="card-title text-gold">LIQUID INTEL: ACID ADJUSTER</h2>
+                <div class="flex-row mb-20">
+                    <div class="half-width">
+                        <label class="text-muted text-sm">Base Liquid</label>
+                        <select id="acid-base" class="premium-basic-input w-100">
+                            <option value="orange">Orange Juice (~1%)</option>
+                            <option value="grapefruit">Grapefruit (~2%)</option>
+                            <option value="pineapple">Pineapple (~0.8%)</option>
+                        </select>
                     </div>
-                    <input type="hidden" id="sweetener-type" value="demerara">
-                </div>
-
-                <div class="input-group">
-                    <label>Base Weight (g)</label>
-                    <div class="massive-input"><input type="number" id="syrup-base" value="500"></div>
-                </div>
-                
-                <div class="input-group" id="ratio-group-container">
-                    <label>Target Ratio (Base : Water)</label>
-                    <div class="pill-group">
-                        <button class="ratio-pill active" data-val="1">1:1</button>
-                        <button class="ratio-pill" data-val="1.5">1.5:1</button>
-                        <button class="ratio-pill" data-val="2">2:1</button>
-                        <button class="ratio-pill" data-val="3">3:1</button>
+                    <div class="half-width">
+                        <label class="text-muted text-sm">Target</label>
+                        <select id="acid-target" class="premium-basic-input w-100">
+                            <option value="lemon">Lemon (6% Citric)</option>
+                            <option value="lime">Lime (4% Cit, 2% Mal)</option>
+                        </select>
                     </div>
-                    <input type="hidden" id="syrup-ratio" value="1">
                 </div>
-
-                <div id="honey-feedback" class="hidden" style="color: var(--nodee-gold); font-size: 0.85rem; letter-spacing: 1px; margin-bottom: 20px; text-align: center;">
-                    LOCKED TO 66 BRIX (MATH YIELD)
+                <div class="input-group">
+                    <label>Volume (ml)</label>
+                    <div class="massive-input"><input type="number" id="acid-vol" value="1000"></div>
                 </div>
-
-                <button id="calc-syrup-btn" class="btn-primary cyan-btn">CALCULATE WATER</button>
-                <div id="syrup-results" class="output-container" style="margin-top: 20px;"></div>
+                <button id="calc-acid-btn" class="btn-primary cyan-btn">CALCULATE POWDERS</button>
+                <div id="acid-results" class="output-container mt-20"></div>
             </div>
 
-            <div class="card spec-card glass-panel">
-                <h2 class="card-title">BRIX ADJUSTER</h2>
+            <!-- MODIFIER ENGINE (Cordials & Shrubs) -->
+            <div class="card glass-panel">
+                <h2 class="card-title text-gold">MODIFIER ENGINE</h2>
                 <div class="input-group">
-                    <label>Current Juice Weight (g)</label>
-                    <div class="massive-input"><input type="number" id="brix-weight" value="500"></div>
+                    <label>Strained Syrup Weight (g)</label>
+                    <div class="massive-input"><input type="number" id="mod-weight" value="1000"></div>
                 </div>
-                <div class="flex-row">
-                    <div class="input-group">
-                        <label>Current Brix</label>
-                        <div class="massive-input"><input type="number" id="brix-current" value="9"></div>
-                    </div>
-                    <div class="input-group">
-                        <label>Target Brix</label>
-                        <div class="massive-input"><input type="number" id="brix-target" value="66"></div>
-                    </div>
+                <div class="pill-group">
+                    <button class="mod-pill active" data-val="cordial">CORDIAL (ACID)</button>
+                    <button class="mod-pill" data-val="shrub">SHRUB (VINEGAR)</button>
                 </div>
-                <button id="calc-brix-btn" class="btn-primary burgundy-btn">CALCULATE SUGAR</button>
-                <div id="brix-results" class="output-container" style="margin-top: 20px;"></div>
+                <button id="calc-mod-btn" class="btn-secondary">CALCULATE FINISH</button>
+                <div id="mod-results" class="output-container mt-20"></div>
+                
+                <div id="vinegar-matrix" class="hidden mt-20 p-15" style="background: rgba(255,255,255,0.05); border-radius: 10px; font-size: 0.85rem; color: var(--text-muted);">
+                    <strong class="text-gold">VINEGAR PAIRING MATRIX</strong><br><br>
+                    • <strong>Apple Cider:</strong> Berries, Apples, Pears, Beetroot<br>
+                    • <strong>White Wine:</strong> Melon, Cucumber, White Peach<br>
+                    • <strong>Rice Wine:</strong> Pineapple, Mango, Passionfruit<br>
+                    • <strong>Red Wine:</strong> Cherries, Plums, Figs
+                </div>
             </div>
 
-            <!-- NEW BRIX CHEAT SHEET CARD -->
-            <div class="card spec-card glass-panel">
+            <!-- BRIX CHEAT SHEET (Static) -->
+            <div class="card glass-panel">
                 <h2 class="card-title">BRIX CHEAT SHEET</h2>
                 <table class="brix-table">
-                    <tr><td colspan="2" class="row-group" style="padding-top: 0;">WHITE / CANE / DEMERARA</td></tr>
+                    <tr><td colspan="2" class="row-group">DEMERARA / WHITE / CANE</td></tr>
                     <tr><td>1 : 1 Ratio</td><td class="align-right">50 Brix</td></tr>
                     <tr><td>1.5 : 1 Ratio</td><td class="align-right">60 Brix</td></tr>
-                    <tr><td>1.85 : 1 Ratio</td><td class="align-right brix-highlight">65 Brix</td></tr>
+                    <tr><td>1.85 : 1 Ratio</td><td class="align-right text-gold fw-bold">65 Brix (House)</td></tr>
                     <tr><td>2 : 1 Ratio</td><td class="align-right">66.6 Brix</td></tr>
-
                     <tr><td colspan="2" class="row-group">HONEY (80 BRIX RAW)</td></tr>
-                    <tr><td>1 : 1 Ratio</td><td class="align-right">40 Brix</td></tr>
-                    <tr><td>1.5 : 1 Ratio</td><td class="align-right">48 Brix</td></tr>
                     <tr><td>3 : 1 Ratio</td><td class="align-right">60 Brix</td></tr>
-                    <tr><td>5 : 1 Ratio</td><td class="align-right">66.6 Brix</td></tr>
-
                     <tr><td colspan="2" class="row-group">AGAVE (75 BRIX RAW)</td></tr>
-                    <tr><td>1 : 1 Ratio</td><td class="align-right">37.5 Brix</td></tr>
-                    <tr><td>2 : 1 Ratio</td><td class="align-right">50 Brix</td></tr>
                     <tr><td>4 : 1 Ratio</td><td class="align-right">60 Brix</td></tr>
                 </table>
             </div>
         </section>
 
-        <section id="vault-module" class="module">
+        <!-- ZONE 3: SCALE (Events & Batching) -->
+        <section id="scale-module" class="module">
             
-            <div id="add-cocktail-ui" class="card spec-card glass-panel edit-panel hidden">
-                <h2 class="card-title" style="color: var(--nodee-gold)">ADD COCKTAIL</h2>
-                <input type="text" id="new-spec-name" class="premium-text-input" placeholder="Cocktail Name">
+            <div class="card glass-panel">
+                <h2 class="card-title text-gold">FORWARD BATCH (EVENTS)</h2>
+                <select id="forward-spec-select" class="premium-basic-input w-100 mb-20"><option value="">Select Spec...</option></select>
                 
-                <div id="new-spec-preview" class="output-container" style="margin-bottom: 20px;"></div>
-
-                <div class="ingredient-adder">
-                    <input type="text" id="new-ing-name" class="premium-basic-input compact-input" placeholder="Ingredient Name">
-                    
-                    <div class="input-group" style="margin-bottom: 15px;">
-                        <label>Category</label>
-                        <div class="category-group">
-                            <button class="category-btn active" data-val="amber-glow">SPIRIT</button>
-                            <button class="category-btn" data-val="magenta-glow">SYRUP</button>
-                        </div>
-                        <input type="hidden" id="new-ing-color" value="amber-glow">
+                <div class="flex-row">
+                    <div class="half-width">
+                        <label class="text-muted text-sm">Target Drinks</label>
+                        <div class="massive-input mt-10"><input type="number" id="forward-drinks" value="20"></div>
                     </div>
-
-                    <div class="flex-row">
-                        <input type="number" id="new-ing-ml" class="premium-basic-input compact-input half-width" placeholder="ml">
-                        <div class="half-width" id="btl-size-container">
-                            <input type="number" id="new-ing-btl" class="premium-basic-input compact-input w-100" placeholder="Btl Size (ml)">
-                            <div class="quick-pills flex-row">
-                                <button class="quick-pill-btn" data-val="500">500ml</button>
-                                <button class="quick-pill-btn" data-val="700">700ml</button>
-                            </div>
-                        </div>
+                    <div class="half-width">
+                        <label class="text-muted text-sm">Dilution %</label>
+                        <div class="massive-input mt-10"><input type="number" id="forward-dilution" value="20"></div>
                     </div>
-
-                    <button id="add-ing-btn" class="btn-secondary" style="margin-top: 10px;">+ ADD INGREDIENT</button>
+                </div>
+                <div class="quick-pills flex-row mb-20">
+                    <button class="quick-pill-btn" onclick="document.getElementById('forward-dilution').value=0">0% (None)</button>
+                    <button class="quick-pill-btn" onclick="document.getElementById('forward-dilution').value=20">20% (Stirred)</button>
+                    <button class="quick-pill-btn" onclick="document.getElementById('forward-dilution').value=25">25% (Shaken)</button>
                 </div>
 
-                <button id="sync-vault-btn" class="btn-primary burgundy-btn" style="margin-top: 30px;">SYNC TO VAULT</button>
+                <button id="calc-forward-btn" class="btn-primary">CALCULATE BATCH</button>
+                <div id="forward-results" class="output-container mt-20"></div>
             </div>
 
-            <div class="card spec-card glass-panel">
-                <h2 class="card-title" style="color: var(--text-muted); border-bottom: 1px solid #333; padding-bottom: 10px; font-size: 0.9rem;">COCKTAIL DATABASE</h2>
-                <input type="text" id="vault-search" class="premium-basic-input w-100" placeholder="Search Cocktails..." style="margin-bottom: 15px;">
-                <div id="managed-vault-list"></div>
+            <div class="card glass-panel">
+                <h2 class="card-title text-gold">REVERSE BATCH (LIMITING FACTOR)</h2>
+                <select id="reverse-spec-select" class="premium-basic-input w-100 mb-20"><option value="">Select Spec...</option></select>
+                <select id="reverse-ing-select" class="premium-basic-input w-100 mb-20 hidden"><option value="">Select Limiting Ingredient...</option></select>
+                
+                <div id="reverse-vol-container" class="hidden">
+                    <div class="input-group">
+                        <label>Available Volume (ml)</label>
+                        <div class="massive-input"><input type="number" id="reverse-vol" value="700"></div>
+                    </div>
+                    <button id="calc-reverse-btn" class="btn-primary burgundy-btn">CALCULATE MAX YIELD</button>
+                    <div id="reverse-results" class="output-container mt-20"></div>
+                </div>
             </div>
-
         </section>
 
     </main>
 
-    <!-- CACHE BUSTER V18 -->
-    <script src="app.js?v=18"></script>
+    <!-- BOTTOM NAVIGATION -->
+    <nav class="bottom-nav">
+        <button class="nav-tab active" data-target="codex-module">
+            <span class="nav-icon">📖</span><span class="nav-label">CODEX</span>
+        </button>
+        <button class="nav-tab" data-target="lab-module">
+            <span class="nav-icon">🧪</span><span class="nav-label">THE LAB</span>
+        </button>
+        <button class="nav-tab" data-target="scale-module">
+            <span class="nav-icon">⚖️</span><span class="nav-label">SCALE</span>
+        </button>
+    </nav>
+
+    <!-- CACHE BUSTER V19 -->
+    <script src="app.js?v=19"></script>
 </body>
 </html>
