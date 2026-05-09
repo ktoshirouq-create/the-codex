@@ -8,8 +8,8 @@
     <link rel="icon" type="image/png" href="icon-512.png">
     <link rel="apple-touch-icon" href="icon-512.png">
     
-    <!-- CACHE BUSTER V22 -->
-    <link rel="stylesheet" href="styles.css?v=22">
+    <!-- CACHE BUSTER V23 -->
+    <link rel="stylesheet" href="styles.css?v=23">
 </head>
 <body>
     <div id="loader" class="loader-overlay"><span class="loader-text">SYNCING CODEX...</span></div>
@@ -61,7 +61,6 @@
         <!-- ZONE 2: THE LAB (Prep & Math) -->
         <section id="lab-module" class="module">
             
-            <!-- ABV CALCULATOR -->
             <div class="card glass-panel">
                 <h2 class="card-title text-gold">ABV CALCULATOR</h2>
                 <button id="btn-abv-spec" class="premium-basic-input custom-select-btn w-100 mb-20 text-muted">Select Spec...</button>
@@ -84,7 +83,6 @@
                 </div>
             </div>
 
-            <!-- CULINARY ENGINE: WASHING -->
             <div class="card glass-panel">
                 <h2 class="card-title text-gold">FAT & PROTEIN WASHING</h2>
                 <div class="pill-group">
@@ -92,7 +90,6 @@
                     <button class="wash-pill" data-val="fat">FAT WASH</button>
                 </div>
 
-                <!-- Milk Wash UI -->
                 <div id="ui-milk-wash">
                     <div class="input-group">
                         <label class="text-muted text-sm mb-10" style="display:block">Total Punch Volume (ml)</label>
@@ -100,7 +97,6 @@
                     </div>
                 </div>
 
-                <!-- Fat Wash UI -->
                 <div id="ui-fat-wash" class="hidden">
                     <label class="text-muted text-sm mb-10" style="display:block">Fat Intensity</label>
                     <button id="btn-fat-type" class="premium-basic-input custom-select-btn w-100 mb-20">Standard (Butter / Coconut Oil)</button>
@@ -114,7 +110,6 @@
                 <div id="wash-results" class="output-container mt-20"></div>
             </div>
 
-            <!-- ACID ADJUSTER -->
             <div class="card glass-panel">
                 <h2 class="card-title text-gold">LIQUID INTEL: ACID ADJUSTER</h2>
                 <div class="flex-row mb-20">
@@ -135,7 +130,6 @@
                 <div id="acid-results" class="output-container mt-20"></div>
             </div>
             
-            <!-- MODIFIER ENGINE -->
             <div class="card glass-panel">
                 <h2 class="card-title text-gold">MODIFIER ENGINE</h2>
                 <div class="input-group">
@@ -202,9 +196,54 @@
             </div>
         </section>
 
+        <!-- ZONE 4: LAW (Legal Compliance) -->
+        <section id="law-module" class="module">
+            
+            <div class="card glass-panel" style="border-top: 3px solid #ff4444;">
+                <h2 class="card-title text-gold">BOUNCER QUICK-CHECK</h2>
+                <div class="result-row mt-10">
+                    <span class="ing-name text-muted" style="font-size: 0.85rem; letter-spacing: 1px;">BEER & WINE (18+)</span>
+                    <span class="ing-amount text-main" id="date-18" style="font-weight: 600;">Loading...</span>
+                </div>
+                <div class="result-row">
+                    <span class="ing-name text-muted" style="font-size: 0.85rem; letter-spacing: 1px;">SPIRITS & COCKTAILS (20+)</span>
+                    <span class="ing-amount text-main" id="date-20" style="font-weight: 600;">Loading...</span>
+                </div>
+                <div class="text-muted text-sm mt-10">Valid ID proves they were born on or before these dates.</div>
+            </div>
+
+            <div class="card glass-panel">
+                <h2 class="card-title text-gold">ALKOHOLLOVEN (THE ALCOHOL ACT)</h2>
+                
+                <h3 class="zone-header">SERVING TIMES (SKJENKETIDER)</h3>
+                <ul style="color: var(--text-muted); font-size: 0.9rem; padding-left: 15px; margin-bottom: 30px; line-height: 1.6;">
+                    <li style="margin-bottom: 8px;">For beer and wine (under 22% ABV), the national normal serving time is 08:00 to 01:00.</li>
+                    <li style="margin-bottom: 8px;">For spirits (22% ABV and above), the national normal serving time is 13:00 to 24:00.</li>
+                    <li style="margin-bottom: 8px;">Municipalities can extend these times, but serving alcohol is strictly forbidden nationwide between 03:00 and 06:00.</li>
+                    <li style="margin-bottom: 8px;">For spirits, the absolute nationwide ban on serving is between 03:00 and 13:00.</li>
+                    <li style="margin-bottom: 8px;">All consumption of poured alcohol must cease no later than 30 minutes after the serving time expires.</li>
+                </ul>
+
+                <h3 class="zone-header">RETAIL SALES (SALGSTIDER)</h3>
+                <ul style="color: var(--text-muted); font-size: 0.9rem; padding-left: 15px; margin-bottom: 30px; line-height: 1.6;">
+                    <li style="margin-bottom: 8px;">On weekdays (Monday to Friday), the maximum time municipalities can allow supermarket alcohol sales is until 20:00.</li>
+                    <li style="margin-bottom: 8px;">On Saturdays and days before public holidays, the maximum time for supermarket alcohol sales is 18:00.</li>
+                    <li style="margin-bottom: 8px;">Alcohol sales are completely prohibited on Sundays and major public holidays.</li>
+                </ul>
+
+                <h3 class="zone-header">PENALTIES & PRIKKSYSTEMET</h3>
+                <ul style="color: var(--text-muted); font-size: 0.9rem; padding-left: 15px; margin-bottom: 10px; line-height: 1.6;">
+                    <li style="margin-bottom: 8px;">If a venue is allocated 12 penalty points within a 2-year period, the liquor license shall be revoked for a duration of one week.</li>
+                    <li style="margin-bottom: 8px;">If more than 12 points are allocated, the length of the license revocation is increased correspondingly.</li>
+                    <li style="margin-bottom: 8px;">The licensee can be subjected to penalties and held responsible for damages under the Alcohol Act.</li>
+                    <li style="margin-bottom: 8px;">The licensee must ensure that volunteers/employees know about the regulations and comply with them.</li>
+                </ul>
+            </div>
+        </section>
+
     </main>
 
-    <!-- BOTTOM NAVIGATION -->
+    <!-- BOTTOM NAVIGATION (Expanded to 4 items) -->
     <nav class="bottom-nav">
         <button class="nav-tab active" data-target="codex-module">
             <span class="nav-icon">📖</span><span class="nav-label">CODEX</span>
@@ -215,9 +254,12 @@
         <button class="nav-tab" data-target="scale-module">
             <span class="nav-icon">⚖️</span><span class="nav-label">SCALE</span>
         </button>
+        <button class="nav-tab" data-target="law-module">
+            <span class="nav-icon">📜</span><span class="nav-label">LAW</span>
+        </button>
     </nav>
 
-    <!-- CACHE BUSTER V22 -->
-    <script src="app.js?v=22"></script>
+    <!-- CACHE BUSTER V23 -->
+    <script src="app.js?v=23"></script>
 </body>
 </html>
