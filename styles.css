@@ -72,6 +72,10 @@ body { background-color: var(--bg-oled); color: var(--text-main); display: flex;
 .stepper-btn { width: 45px; height: 45px; background: #222; color: var(--nodee-gold); font-size: 1.5rem; border-radius: 10px; display: flex; align-items: center; justify-content: center; }
 .stepper-value { font-size: 1.4rem; font-weight: 600; }
 
+.mini-stepper { padding: 4px; border-radius: 10px; }
+.mini-stepper .stepper-btn { width: 35px; height: 35px; font-size: 1.4rem; border-radius: 8px;}
+.mini-stepper .stepper-value { font-size: 1.2rem; }
+
 /* Buttons */
 .btn-primary { background: var(--nodee-gold); color: #000; padding: 20px; border-radius: 14px; font-size: 1rem; font-weight: 900; letter-spacing: 2px; width: 100%; }
 .btn-secondary { background: #1a1a1a; border: 1px solid #333; color: #fff; padding: 16px; border-radius: 14px; font-size: 0.9rem; font-weight: 800; width: 100%; }
@@ -93,12 +97,15 @@ body { background-color: var(--bg-oled); color: var(--text-main); display: flex;
 .wash-pill, .mod-pill { flex: 1; border: 1px solid #444; color: var(--text-muted); padding: 12px 0; border-radius: 12px; font-size: 0.9rem; font-weight: 700; text-align: center; transition: all 0.2s; }
 .wash-pill.active, .mod-pill.active { background: var(--nodee-gold); border-color: var(--nodee-gold); color: var(--bg-oled); }
 
+/* Quick Pills */
+.quick-pills { gap: 10px; }
+.quick-pill-btn { flex: 1; border: 1px solid rgba(255,255,255,0.1); background: rgba(255,255,255,0.04); color: var(--text-muted); padding: 10px 0; border-radius: 10px; font-size: 0.8rem; font-weight: 700; cursor: pointer; }
+.quick-pill-btn:active { background: rgba(255,255,255,0.1); color: var(--text-main); }
+
 /* ABV Inputs */
 .abv-input-row { display: flex; justify-content: space-between; align-items: center; border-bottom: 1px solid rgba(255,255,255,0.05); padding: 10px 0; }
 .abv-input-row:last-child { border-bottom: none; }
 .abv-ing-name { font-size: 0.95rem; color: var(--text-main); font-weight: 500; text-transform: capitalize;}
-.abv-number-input { background: transparent; border: none; border-bottom: 1px solid #555; color: var(--nodee-gold); font-size: 1.4rem; text-align: center; width: 60px; outline: none; transition: border-color 0.3s; }
-.abv-number-input:focus { border-color: var(--nodee-gold); }
 
 /* Law Specifics */
 .law-table { margin-bottom: 20px; }
