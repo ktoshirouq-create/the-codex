@@ -4,13 +4,12 @@ document.addEventListener('DOMContentLoaded', () => {
     const API_URL = 'https://script.google.com/macros/s/AKfycbx_fku9O9Ljbul6DIYuattXyjtu2fH9U_Reb24irImb1vU60jxDJWExv4yy9s1k0w3Q/exec';
     let recipeVault = {};
     let parsedStagingData = []; 
+    let editingCocktailName = null;
 
-    // Global Memory States (To prevent typing during rush)
+    // Global Memory States
     window.lastUsedRound = 1;
     let fDrinks = 20;
     let fDilution = 20;
-
-    // Custom Modal State
     let activeSpecSelect = null; 
     let activeIngSelect = null;
 
@@ -28,13 +27,55 @@ document.addEventListener('DOMContentLoaded', () => {
         const l = document.getElementById('loader');
         l.style.display = 'flex'; l.style.opacity = '1';
     };
-    
     const hideLoader = () => {
         const l = document.getElementById('loader');
         l.style.opacity = '0'; setTimeout(() => l.style.display = 'none', 300);
     };
 
-    // CUSTOM MODAL LOGIC (Replaces Native Dropdowns)
+    // PULL TO REFRESH (Hard Reload)
+    let touchStartY = 0;
+    const scrollArea = document.getElementById('scroll-area');
+    const ptrIndicator = document.getElementById('ptr-indicator');
+
+    scrollArea.addEventListener('touchstart', e => {
+        if (scrollArea.scrollTop === 0) touchStartY = e.touches[0].clientY;
+    }, {passive: true});
+    
+    scrollArea.addEventListener('touchmove', e => {
+        if (scrollArea.scrollTop === 0 && touchStartY > 0) {
+            const pullDistance = e.touches[0].clientY - touchStartY;
+            if (pullDistance > 0 && pullDistance < 120) {
+                ptrIndicator.style.transform = `translateY(${pullDistance * 0.5}px)`;
+                ptrIndicator.style.opacity = pullDistance / 100;
+            }
+        }
+    }, {passive: true});
+    
+    scrollArea.addEventListener('touchend', e => {
+        if (scrollArea.scrollTop === 0 && touchStartY > 0) {
+            const pullDistance = e.changedTouches[0].clientY - touchStartY;
+            if (pullDistance > 70) {
+                ptrIndicator.innerText = "REFRESHING...";
+                triggerHaptic('heavy');
+                setTimeout(() => window.location.reload(true), 150); // Hard reload
+            } else {
+                ptrIndicator.style.transform = `translateY(-20px)`;
+                ptrIndicator.style.opacity = 0;
+            }
+        }
+        touchStartY = 0;
+    }, {passive: true});
+
+    // CUSTOM MODAL LOGIC (Drag & Ghost Click)
+    const modalWrapper = document.getElementById('selection-modal');
+    const modalContent = document.getElementById('modal-content-area');
+    const dragZone = document.getElementById('modal-drag-zone');
+    const dragHandle = document.querySelector('.drag-handle');
+    
+    let dragStartY = 0;
+    let dragCurrentY = 0;
+    let isDragging = false;
+
     function openSelectModal(title, options, onSelect) {
         triggerHaptic('light');
         document.getElementById('selection-modal-title').innerText = title;
@@ -48,17 +89,64 @@ document.addEventListener('DOMContentLoaded', () => {
             item.addEventListener('click', () => {
                 triggerHaptic('light');
                 onSelect(opt.value, opt.label, opt.data);
-                document.getElementById('selection-modal').classList.add('hidden');
+                closeSelectionModal();
             });
             list.appendChild(item);
         });
-        document.getElementById('selection-modal').classList.remove('hidden');
+        modalWrapper.classList.remove('hidden');
     }
 
-    document.getElementById('close-selection-modal').addEventListener('click', () => {
+    function closeSelectionModal() {
         triggerHaptic('light');
-        document.getElementById('selection-modal').classList.add('hidden');
+        modalContent.style.transform = `translateY(100%)`;
+        setTimeout(() => {
+            modalWrapper.classList.add('hidden');
+            modalContent.style.transform = ''; // reset for next open
+            modalContent.style.transition = '';
+        }, 300);
+    }
+
+    // Modal Ghost Click
+    modalWrapper.addEventListener('click', (e) => {
+        if (e.target.id === 'selection-modal') closeSelectionModal();
     });
+    
+    // Modal 'X' Button
+    document.getElementById('close-selection-modal').addEventListener('click', closeSelectionModal);
+
+    // Modal Physics Drag
+    const startDrag = (e) => {
+        dragStartY = e.touches[0].clientY;
+        isDragging = true;
+        modalContent.style.transition = 'none'; // Disable CSS transition for 1:1 drag
+    };
+    const moveDrag = (e) => {
+        if(!isDragging) return;
+        const deltaY = e.touches[0].clientY - dragStartY;
+        if (deltaY > 0) { // Only allow dragging down
+            dragCurrentY = deltaY;
+            modalContent.style.transform = `translateY(${dragCurrentY}px)`;
+        }
+    };
+    const endDrag = () => {
+        if(!isDragging) return;
+        isDragging = false;
+        modalContent.style.transition = 'transform 0.3s cubic-bezier(0.16, 1, 0.3, 1)';
+        
+        if (dragCurrentY > 100) { // Snap away
+            closeSelectionModal();
+        } else { // Snap back
+            modalContent.style.transform = 'translateY(0)';
+        }
+        dragCurrentY = 0;
+    };
+
+    dragZone.addEventListener('touchstart', startDrag, {passive: true});
+    dragZone.addEventListener('touchmove', moveDrag, {passive: true});
+    dragZone.addEventListener('touchend', endDrag);
+    dragHandle.addEventListener('touchstart', startDrag, {passive: true});
+    dragHandle.addEventListener('touchmove', moveDrag, {passive: true});
+    dragHandle.addEventListener('touchend', endDrag);
 
     // INIT DB
     async function loadVault() {
@@ -97,7 +185,6 @@ document.addEventListener('DOMContentLoaded', () => {
         }
 
         specs.forEach(cocktail => {
-            // Sort: Spirits -> Liqueurs -> Syrups
             recipeVault[cocktail].sort((a, b) => {
                 const order = { 'amber-glow': 1, 'neon-cyan': 2, 'magenta-glow': 3 };
                 return (order[a.color] || 4) - (order[b.color] || 4);
@@ -106,7 +193,6 @@ document.addEventListener('DOMContentLoaded', () => {
             const vItem = document.createElement('div');
             vItem.className = 'vault-item';
             
-            // Build ingredients HTML with integrated Stepper Memory
             let ingHtml = `<div class="vault-details" id="details-${cocktail.replace(/\s+/g, '')}">`;
             
             ingHtml += `
@@ -121,17 +207,26 @@ document.addEventListener('DOMContentLoaded', () => {
                 <div id="recipe-list-${cocktail.replace(/\s+/g, '')}">
             `;
 
+            let totalBaseYield = 0;
             recipeVault[cocktail].forEach(ing => {
-                // Pre-multiply by the global lastUsedRound so expanding instantly matches your flow
+                totalBaseYield += ing.amount;
                 const activeAmt = ing.amount * window.lastUsedRound;
                 ingHtml += `<div class="result-row ${ing.color}"><span class="ing-name">${ing.name}</span><span class="ing-amount base-amt" data-base="${ing.amount}">${activeAmt.toFixed(1).replace(/\.0$/, '')}ml</span></div>`;
             });
+
+            // The Total Yield Engine
+            const activeTotal = totalBaseYield * window.lastUsedRound;
+            ingHtml += `<div class="result-row mt-10" style="border-top:1px solid #333; padding-top:15px;"><span class="ing-name text-gold fw-bold">TOTAL YIELD</span><span class="ing-amount base-total text-main" data-base="${totalBaseYield}">${activeTotal.toFixed(1).replace(/\.0$/, '')}ml</span></div>`;
+
             ingHtml += '</div></div>';
 
             vItem.innerHTML = `
                 <div class="vault-header">
                     <span class="cocktail-title">${cocktail}</span>
-                    <button class="action-btn delete hidden admin-controls" onclick="event.stopPropagation(); deleteSpec('${cocktail}')">DEL</button>
+                    <div class="admin-controls hidden">
+                        <button class="action-btn edit" onclick="event.stopPropagation(); editSpec('${cocktail}')">EDIT</button>
+                        <button class="action-btn delete" onclick="event.stopPropagation(); deleteSpec('${cocktail}')">DEL</button>
+                    </div>
                 </div>
                 ${ingHtml}
             `;
@@ -157,7 +252,7 @@ document.addEventListener('DOMContentLoaded', () => {
         if(next < 1) next = 1;
         
         valSpan.innerText = next;
-        window.lastUsedRound = next; // Save global state so next recipe starts here
+        window.lastUsedRound = next; 
 
         const container = document.getElementById(`recipe-list-${cocktailId}`);
         const amounts = container.querySelectorAll('.base-amt');
@@ -165,6 +260,13 @@ document.addEventListener('DOMContentLoaded', () => {
             const base = parseFloat(el.getAttribute('data-base'));
             el.innerText = `${(base * next).toFixed(1).replace(/\.0$/, '')}ml`;
         });
+
+        // Update Total Yield Display
+        const totalEl = container.querySelector('.base-total');
+        if(totalEl) {
+            const baseTotal = parseFloat(totalEl.getAttribute('data-base'));
+            totalEl.innerText = `${(baseTotal * next).toFixed(1).replace(/\.0$/, '')}ml`;
+        }
     };
 
     // SEARCH
@@ -175,6 +277,26 @@ document.addEventListener('DOMContentLoaded', () => {
             item.style.display = title.includes(term) ? 'block' : 'none';
         });
     });
+
+    // DB EDIT
+    window.editSpec = (name) => {
+        triggerHaptic('heavy');
+        editingCocktailName = name;
+        const spec = recipeVault[name];
+        
+        parsedStagingData = spec.map(ing => ({
+            cocktailName: name,
+            ingredientName: ing.name,
+            amount: ing.amount,
+            bottleSize: 0,
+            categoryTag: ing.color
+        }));
+
+        document.getElementById('spec-title-input').value = name;
+        document.getElementById('keep-paste-area').value = '';
+        renderStagingArea();
+        document.getElementById('scroll-area').scrollTop = 0;
+    };
 
     // DB DELETE
     window.deleteSpec = async (name) => {
@@ -204,12 +326,12 @@ document.addEventListener('DOMContentLoaded', () => {
                 const amt = parseFloat(match[1]);
                 const name = capitalize(match[2].trim());
                 
-                let tag = 'amber-glow'; // Default Spirit
+                let tag = 'amber-glow'; 
                 const lowName = name.toLowerCase();
                 if (lowName.includes('syrup') || lowName.includes('sugar') || lowName.includes('agave') || lowName.includes('honey')) {
-                    tag = 'magenta-glow'; // Syrup
+                    tag = 'magenta-glow'; 
                 } else if (lowName.includes('liqueur') || lowName.includes('amaro') || lowName.includes('campari') || lowName.includes('vermouth')) {
-                    tag = 'neon-cyan'; // Liqueur/Modifier
+                    tag = 'neon-cyan'; 
                 }
 
                 parsedStagingData.push({ cocktailName: title, ingredientName: name, amount: amt, bottleSize: 0, categoryTag: tag });
@@ -269,12 +391,18 @@ document.addEventListener('DOMContentLoaded', () => {
         triggerHaptic('heavy');
         showLoader("PUSHING TO CODEX...");
         try {
+            // If editing, delete old version first
+            if (editingCocktailName) {
+                await fetch(API_URL, { method: 'POST', body: JSON.stringify({ action: 'delete', cocktailName: editingCocktailName }) });
+            }
+
             await fetch(API_URL, { method: 'POST', body: JSON.stringify(parsedStagingData) });
             
             document.getElementById('spec-title-input').value = '';
             document.getElementById('keep-paste-area').value = '';
             document.getElementById('staging-area').classList.add('hidden');
             parsedStagingData = [];
+            editingCocktailName = null;
             
             await loadVault();
         } catch (e) { hideLoader(); }
@@ -282,7 +410,7 @@ document.addEventListener('DOMContentLoaded', () => {
 
     // --- LAB: CUSTOM DROPDOWNS ---
     let activeAcidBase = { val: 'orange', multCitric: 0.05, multMalic: 0 };
-    let activeAcidTarget = 'lemon'; // or 'lime'
+    let activeAcidTarget = 'lemon';
 
     document.getElementById('btn-acid-base').addEventListener('click', () => {
         const opts = [
@@ -437,7 +565,6 @@ document.addEventListener('DOMContentLoaded', () => {
             document.getElementById('btn-reverse-spec').style.color = "var(--text-main)";
             document.getElementById('btn-reverse-spec').classList.remove('text-muted');
             
-            // Reset Ingredient select
             activeRevIng = null;
             document.getElementById('btn-reverse-ing').innerText = "Select Limiting Ingredient...";
             document.getElementById('btn-reverse-ing').classList.add('text-muted');
@@ -515,6 +642,13 @@ document.addEventListener('DOMContentLoaded', () => {
             lockBtn.style.borderColor = 'var(--text-muted)';
             document.getElementById('admin-parser-ui').classList.add('hidden');
             document.querySelectorAll('.admin-controls').forEach(el => el.classList.add('hidden'));
+            
+            // Clear Edit State if cancelling
+            editingCocktailName = null;
+            document.getElementById('spec-title-input').value = '';
+            document.getElementById('keep-paste-area').value = '';
+            document.getElementById('staging-area').classList.add('hidden');
+            parsedStagingData = [];
         }
     });
 });
