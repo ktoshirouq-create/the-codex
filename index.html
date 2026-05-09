@@ -8,8 +8,8 @@
     <link rel="icon" type="image/png" href="icon-512.png">
     <link rel="apple-touch-icon" href="icon-512.png">
     
-    <!-- CACHE BUSTER V21 -->
-    <link rel="stylesheet" href="styles.css?v=21">
+    <!-- CACHE BUSTER V22 -->
+    <link rel="stylesheet" href="styles.css?v=22">
 </head>
 <body>
     <div id="loader" class="loader-overlay"><span class="loader-text">SYNCING CODEX...</span></div>
@@ -38,7 +38,6 @@
         <!-- ZONE 1: THE CODEX (Vault & Parser) -->
         <section id="codex-module" class="module active">
             
-            <!-- ADMIN: Smart Parser -->
             <div id="admin-parser-ui" class="card glass-panel edit-panel hidden">
                 <h2 class="card-title text-gold">SMART PARSER</h2>
                 <input type="text" id="spec-title-input" class="premium-text-input" placeholder="Cocktail Title">
@@ -52,7 +51,6 @@
                 </div>
             </div>
 
-            <!-- PUBLIC: Recipe Vault -->
             <div class="card glass-panel" style="padding: 25px 15px;">
                 <h2 class="card-title text-muted border-bottom pb-10" style="padding-left: 5px;">DATABASE</h2>
                 <input type="text" id="vault-search" class="search-pill w-100" placeholder="Search Specs & Batches...">
@@ -60,8 +58,62 @@
             </div>
         </section>
 
-        <!-- ZONE 2: THE LAB (Prep & Modifiers) -->
+        <!-- ZONE 2: THE LAB (Prep & Math) -->
         <section id="lab-module" class="module">
+            
+            <!-- ABV CALCULATOR -->
+            <div class="card glass-panel">
+                <h2 class="card-title text-gold">ABV CALCULATOR</h2>
+                <button id="btn-abv-spec" class="premium-basic-input custom-select-btn w-100 mb-20 text-muted">Select Spec...</button>
+                
+                <div id="abv-ing-container" class="hidden mb-20">
+                    <h3 class="zone-header">BASE INGREDIENTS (ABV %)</h3>
+                    <div id="abv-ing-list"></div>
+                    
+                    <div class="flex-row mt-20" style="align-items: center; justify-content: space-between; border-top: 1px solid #333; padding-top: 15px;">
+                        <label class="text-muted text-sm">Target Dilution</label>
+                        <div class="stepper-control mini-stepper" style="width: 120px;">
+                            <button id="abv-dil-minus" class="stepper-btn">−</button>
+                            <span id="abv-dil-val" class="stepper-value">20%</span>
+                            <button id="abv-dil-plus" class="stepper-btn">+</button>
+                        </div>
+                    </div>
+                    
+                    <button id="calc-abv-btn" class="btn-primary mt-20 cyan-btn">CALCULATE FINAL ABV</button>
+                    <div id="abv-results" class="output-container mt-20"></div>
+                </div>
+            </div>
+
+            <!-- CULINARY ENGINE: WASHING -->
+            <div class="card glass-panel">
+                <h2 class="card-title text-gold">FAT & PROTEIN WASHING</h2>
+                <div class="pill-group">
+                    <button class="wash-pill active" data-val="milk">MILK PUNCH</button>
+                    <button class="wash-pill" data-val="fat">FAT WASH</button>
+                </div>
+
+                <!-- Milk Wash UI -->
+                <div id="ui-milk-wash">
+                    <div class="input-group">
+                        <label class="text-muted text-sm mb-10" style="display:block">Total Punch Volume (ml)</label>
+                        <div class="massive-input"><input type="number" id="milk-punch-vol" value="1000"></div>
+                    </div>
+                </div>
+
+                <!-- Fat Wash UI -->
+                <div id="ui-fat-wash" class="hidden">
+                    <label class="text-muted text-sm mb-10" style="display:block">Fat Intensity</label>
+                    <button id="btn-fat-type" class="premium-basic-input custom-select-btn w-100 mb-20">Standard (Butter / Coconut Oil)</button>
+                    <div class="input-group">
+                        <label class="text-muted text-sm mb-10" style="display:block">Spirit Volume (ml)</label>
+                        <div class="massive-input"><input type="number" id="fat-spirit-vol" value="700"></div>
+                    </div>
+                </div>
+
+                <button id="calc-wash-btn" class="btn-secondary mt-20">CALCULATE WASH</button>
+                <div id="wash-results" class="output-container mt-20"></div>
+            </div>
+
             <!-- ACID ADJUSTER -->
             <div class="card glass-panel">
                 <h2 class="card-title text-gold">LIQUID INTEL: ACID ADJUSTER</h2>
@@ -79,11 +131,11 @@
                     <label>Volume (ml)</label>
                     <div class="massive-input"><input type="number" id="acid-vol" value="1000"></div>
                 </div>
-                <button id="calc-acid-btn" class="btn-primary cyan-btn">ADJUST ACID</button>
+                <button id="calc-acid-btn" class="btn-secondary mt-20">ADJUST ACID</button>
                 <div id="acid-results" class="output-container mt-20"></div>
             </div>
-
-            <!-- MODIFIER ENGINE (Cordials & Shrubs) -->
+            
+            <!-- MODIFIER ENGINE -->
             <div class="card glass-panel">
                 <h2 class="card-title text-gold">MODIFIER ENGINE</h2>
                 <div class="input-group">
@@ -96,30 +148,6 @@
                 </div>
                 <button id="calc-mod-btn" class="btn-secondary">CALCULATE FINISH</button>
                 <div id="mod-results" class="output-container mt-20"></div>
-                
-                <div id="vinegar-matrix" class="hidden mt-20 p-15" style="background: rgba(255,255,255,0.05); border-radius: 10px; font-size: 0.85rem; color: var(--text-muted);">
-                    <strong class="text-gold">VINEGAR PAIRING MATRIX</strong><br><br>
-                    • <strong>Apple Cider:</strong> Berries, Apples, Pears, Beetroot<br>
-                    • <strong>White Wine:</strong> Melon, Cucumber, White Peach<br>
-                    • <strong>Rice Wine:</strong> Pineapple, Mango, Passionfruit<br>
-                    • <strong>Red Wine:</strong> Cherries, Plums, Figs
-                </div>
-            </div>
-
-            <!-- BRIX CHEAT SHEET (Static) -->
-            <div class="card glass-panel">
-                <h2 class="card-title">BRIX CHEAT SHEET</h2>
-                <table class="brix-table">
-                    <tr><td colspan="2" class="row-group">DEMERARA / WHITE / CANE</td></tr>
-                    <tr><td>1 : 1 Ratio</td><td class="align-right">50 Brix</td></tr>
-                    <tr><td>1.5 : 1 Ratio</td><td class="align-right">60 Brix</td></tr>
-                    <tr><td>1.85 : 1 Ratio</td><td class="align-right text-gold fw-bold">65 Brix</td></tr>
-                    <tr><td>2 : 1 Ratio</td><td class="align-right">66.6 Brix</td></tr>
-                    <tr><td colspan="2" class="row-group">HONEY (80 BRIX RAW)</td></tr>
-                    <tr><td>3 : 1 Ratio</td><td class="align-right">60 Brix</td></tr>
-                    <tr><td colspan="2" class="row-group">AGAVE (75 BRIX RAW)</td></tr>
-                    <tr><td>4 : 1 Ratio</td><td class="align-right">60 Brix</td></tr>
-                </table>
             </div>
         </section>
 
@@ -189,7 +217,7 @@
         </button>
     </nav>
 
-    <!-- CACHE BUSTER V21 -->
-    <script src="app.js?v=21"></script>
+    <!-- CACHE BUSTER V22 -->
+    <script src="app.js?v=22"></script>
 </body>
 </html>
