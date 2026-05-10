@@ -96,8 +96,9 @@ body { background-color: var(--bg-oled); color: var(--text-main); display: flex;
 .neon-cyan .ing-amount { color: var(--neon-cyan); }
 
 /* Wash & Mod Pills */
-.wash-pill, .mod-pill { flex: 1; background: rgba(255,255,255,0.03); border: 1px solid rgba(255,255,255,0.08); color: var(--text-muted); padding: 14px 0; border-radius: 14px; font-size: 0.85rem; font-weight: 800; letter-spacing: 1px; text-align: center; transition: all 0.2s ease; cursor: pointer; }
-.wash-pill.active, .mod-pill.active { background: var(--nodee-gold); border-color: var(--nodee-gold); color: var(--bg-oled); }
+.wash-pill, .mod-pill { flex: 1; background: transparent; border: none; color: var(--text-muted); padding: 12px 0; border-radius: 10px; font-size: 0.85rem; font-weight: 800; letter-spacing: 1px; text-align: center; transition: color 0.25s ease; cursor: pointer; position: relative; z-index: 2; }
+.wash-pill.active, .mod-pill.active { color: var(--bg-oled); }
+.wash-pill:active, .mod-pill:active { transform: scale(0.96); transition: transform 0.1s ease; }
 /* Quick Pills */
 .quick-pills { gap: 10px; }
 .quick-pill-btn { flex: 1; border: 1px solid rgba(255,255,255,0.1); background: rgba(255,255,255,0.04); color: var(--text-muted); padding: 10px 0; border-radius: 10px; font-size: 0.8rem; font-weight: 700; cursor: pointer; }
@@ -117,8 +118,10 @@ body { background-color: var(--bg-oled); color: var(--text-main); display: flex;
 .law-list li::before { content: '•'; color: var(--nodee-gold); position: absolute; left: 0; font-weight: 900; }
 .zone-header { font-size: 0.75rem; letter-spacing: 2px; color: var(--nodee-gold); border-bottom: 1px solid #333; padding-bottom: 5px; margin-bottom: 15px; margin-top: 30px; }
 
-/* Pill Groups */
-.pill-group { display: flex; gap: 10px; margin-bottom: 20px; }
+/* Segmented Control */
+.pill-group { display: flex; gap: 0; background: rgba(255,255,255,0.04); border: 1px solid rgba(255,255,255,0.06); border-radius: 14px; padding: 4px; position: relative; margin-bottom: 20px; }
+.pill-group::before { content: ''; position: absolute; top: 4px; bottom: 4px; left: 4px; width: calc(50% - 4px); background: var(--nodee-gold); border-radius: 10px; transition: transform 0.35s cubic-bezier(0.16, 1, 0.3, 1); z-index: 1; box-shadow: 0 2px 12px rgba(200, 169, 126, 0.25); }
+.pill-group:has(> button:nth-child(2).active)::before { transform: translateX(100%); }
 
 /* Staging Rows (Smart Parser) */
 .staging-row { display: flex; gap: 10px; align-items: center; padding: 10px 0; border-bottom: 1px solid #222; }
