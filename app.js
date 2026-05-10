@@ -15,6 +15,7 @@ document.addEventListener('DOMContentLoaded', () => {
     let activeRevSpec = null;
     let activeRevIng = null;
     let activeRevIngAmt = 0;
+    let activeAbvSpec = null;
 
     // --- HELPERS ---
     const capitalize = (str) => str.toLowerCase().replace(/\b\w/g, c => c.toUpperCase());
@@ -295,6 +296,7 @@ document.addEventListener('DOMContentLoaded', () => {
             const title = capitalize(document.getElementById('spec-title-input').value.trim());
             const text = document.getElementById('keep-paste-area').value;
             if(!title || !text) return alert("Need Title and Recipe Text.");
+            if (editingCocktailName && editingCocktailName !== title) editingCocktailName = null;
 
             parsedStagingData = [];
             const lines = text.split('\n');
