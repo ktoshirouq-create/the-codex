@@ -582,6 +582,8 @@ document.addEventListener('DOMContentLoaded', () => {
         document.querySelectorAll('.mod-pill').forEach(btn => btn.classList.remove('active'));
         e.target.classList.add('active');
         modType = e.target.getAttribute('data-val');
+        const guide = document.getElementById('shrub-guide');
+        if (guide) guide.classList.toggle('hidden', modType !== 'shrub');
     }));
 
     const calcModBtn = document.getElementById('calc-mod-btn');
