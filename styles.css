@@ -143,7 +143,9 @@ body { background-color: var(--bg-oled); color: var(--text-main); display: flex;
 .select-stack { display: flex; flex-direction: column; gap: 16px; }
 .select-field { display: flex; flex-direction: column; gap: 8px; }
 .select-label { font-size: 0.7rem; letter-spacing: 2px; font-weight: 900; color: var(--text-muted); padding-left: 4px; }
-/* Staging Rows (Smart Parser) */
+//* Staging Rows (Smart Parser) */
+.staging-section-header { font-size: 0.8rem; font-weight: 900; letter-spacing: 2px; color: var(--nodee-gold); margin: 22px 0 10px; padding-bottom: 8px; border-bottom: 1px solid rgba(200, 169, 126, 0.3); text-transform: uppercase; }
+.staging-section-header:first-child { margin-top: 4px; }
 .staging-row { display: flex; gap: 10px; align-items: center; padding: 10px 0; border-bottom: 1px solid #222; }
 .staging-inputs { flex: 1; display: flex; gap: 8px; min-width: 0; }
 .stage-amt { width: 70px; background: rgba(255,255,255,0.04); border: 1px solid #222; border-radius: 10px; padding: 10px 8px; color: var(--nodee-gold); font-size: 1rem; font-weight: 700; text-align: center; }
