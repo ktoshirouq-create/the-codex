@@ -49,7 +49,7 @@ body { background-color: var(--bg-oled); color: var(--text-main); display: flex;
 
 .search-pill { background: rgba(255,255,255,0.05); border-radius: 16px; padding: 18px 20px; font-size: 1.1rem; color: #fff; margin-bottom: 20px; }
 .premium-text-input { background: rgba(255,255,255,0.03); border: 1px solid #222; border-radius: 14px; padding: 16px; font-size: 1.1rem; color: #fff; margin-bottom: 15px; width: 100%; }
-.custom-select-btn { text-align: left; background: rgba(255,255,255,0.03); border: 1px solid #222; border-radius: 14px; padding: 16px; font-size: 1rem; color: #fff; position: relative; }
+.custom-select-btn { text-align: left; background: rgba(255,255,255,0.03); border: 1px solid #222; border-radius: 14px; padding: 16px 36px 16px 16px; font-size: 1rem; color: #fff; position: relative; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
 .custom-select-btn::after { content: '▼'; position: absolute; right: 15px; font-size: 0.7rem; color: var(--nodee-gold); }
 
 /* The Enclosed Premium Input Redesign */
@@ -116,6 +116,19 @@ body { background-color: var(--bg-oled); color: var(--text-main); display: flex;
 .law-list li { margin-bottom: 12px; position: relative; padding-left: 20px; }
 .law-list li::before { content: '•'; color: var(--nodee-gold); position: absolute; left: 0; font-weight: 900; }
 .zone-header { font-size: 0.75rem; letter-spacing: 2px; color: var(--nodee-gold); border-bottom: 1px solid #333; padding-bottom: 5px; margin-bottom: 15px; margin-top: 30px; }
+
+/* Pill Groups */
+.pill-group { display: flex; gap: 10px; margin-bottom: 20px; }
+
+/* Staging Rows (Smart Parser) */
+.staging-row { display: flex; gap: 10px; align-items: center; padding: 10px 0; border-bottom: 1px solid #222; }
+.staging-inputs { flex: 1; display: flex; gap: 8px; min-width: 0; }
+.stage-amt { width: 70px; background: rgba(255,255,255,0.04); border: 1px solid #222; border-radius: 10px; padding: 10px 8px; color: var(--nodee-gold); font-size: 1rem; font-weight: 700; text-align: center; }
+.stage-name { flex: 1; min-width: 0; background: rgba(255,255,255,0.04); border: 1px solid #222; border-radius: 10px; padding: 10px 12px; color: var(--text-main); font-size: 0.95rem; }
+.stage-cat { padding: 10px 12px; border-radius: 10px; font-size: 0.7rem; font-weight: 900; letter-spacing: 1px; color: #000; flex-shrink: 0; }
+.stage-cat.amber-glow { background: var(--amber-glow); }
+.stage-cat.neon-cyan { background: var(--neon-cyan); }
+.stage-cat.magenta-glow { background: var(--magenta-glow); }
 
 /* Bottom Nav */
 .bottom-nav { position: fixed; bottom: 0; width: 100%; background: rgba(10,10,10,0.95); backdrop-filter: blur(20px); border-top: 1px solid #222; display: flex; z-index: 100; padding-bottom: env(safe-area-inset-bottom); }
