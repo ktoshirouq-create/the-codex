@@ -7,6 +7,7 @@
     --amber-glow: #E5B15D;
     --neon-cyan: #7EAAC8;
     --magenta-glow: #B06A8B;
+    --juice-glow: #9EC4A8;
 }
 
 * { box-sizing: border-box; margin: 0; padding: 0; font-family: -apple-system, BlinkMacSystemFont, Arial, sans-serif; user-select: none; -webkit-tap-highlight-color: transparent; }
@@ -99,6 +100,7 @@ body { background-color: var(--bg-oled); color: var(--text-main); display: flex;
 .amber-glow .ing-amount { color: var(--amber-glow); }
 .magenta-glow .ing-amount { color: var(--magenta-glow); }
 .neon-cyan .ing-amount { color: var(--neon-cyan); }
+.juice-glow .ing-amount { color: var(--juice-glow); }
 
 /* Wash & Mod Pills */
 .wash-pill, .mod-pill { flex: 1; background: transparent; border: none; color: var(--text-muted); padding: 12px 0; border-radius: 10px; font-size: 0.85rem; font-weight: 800; letter-spacing: 1px; text-align: center; transition: color 0.25s ease; cursor: pointer; position: relative; z-index: 2; }
@@ -150,6 +152,7 @@ body { background-color: var(--bg-oled); color: var(--text-main); display: flex;
 .stage-cat.amber-glow { background: var(--amber-glow); }
 .stage-cat.neon-cyan { background: var(--neon-cyan); }
 .stage-cat.magenta-glow { background: var(--magenta-glow); }
+.stage-cat.juice-glow { background: var(--juice-glow); }
 
 /* Bottom Nav */
 .bottom-nav { position: fixed; bottom: 0; width: 100%; background: rgba(10,10,10,0.95); backdrop-filter: blur(20px); border-top: 1px solid #222; display: flex; z-index: 100; padding-bottom: env(safe-area-inset-bottom); }
