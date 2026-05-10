@@ -114,6 +114,15 @@ body { background-color: var(--bg-oled); color: var(--text-main); display: flex;
 .abv-input-row:last-child { border-bottom: none; }
 .abv-ing-name { font-size: 0.95rem; color: var(--text-main); font-weight: 500; text-transform: capitalize;}
 
+/* Shrub Vinegar Guide */
+#shrub-guide { margin-top: 20px; margin-bottom: 20px; }
+.vinegar-row { display: flex; align-items: flex-start; gap: 14px; padding: 14px 0; border-bottom: 1px solid rgba(255,255,255,0.05); }
+.vinegar-row:last-child { border-bottom: none; }
+.vinegar-emoji { font-size: 1.6rem; flex-shrink: 0; line-height: 1.3; }
+.vinegar-info { display: flex; flex-direction: column; gap: 4px; flex: 1; min-width: 0; }
+.vinegar-name { font-size: 0.85rem; font-weight: 900; color: var(--nodee-gold); letter-spacing: 1.5px; }
+.vinegar-desc { font-size: 0.8rem; color: var(--text-muted); line-height: 1.5; }
+
 /* Law Specifics */
 .law-table { margin-bottom: 20px; }
 .law-row { display: flex; align-items: center; gap: 15px; padding: 15px 0; border-bottom: 1px solid #222; font-size: 0.95rem; }
