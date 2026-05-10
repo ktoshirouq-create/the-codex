@@ -271,7 +271,13 @@ document.addEventListener('DOMContentLoaded', () => {
     window.editSpec = (name) => {
         triggerHaptic('heavy');
         editingCocktailName = name;
-        parsedStagingData = recipeVault[name].map(ing => ({ cocktailName: name, ingredientName: ing.name, amount: ing.amount, bottleSize: 0, categoryTag: ing.color }));
+        const related = [name, ...Object.keys(recipeVault).filter(n => n.startsWith(name + ' — '))];
+        parsedStagingData = [];
+        related.forEach(sectionName => {
+            (recipeVault[sectionName] || []).forEach(ing => {
+                parsedStagingData.push({ cocktailName: sectionName, ingredientName: ing.name, amount: ing.amount, bottleSize: 0, categoryTag: ing.color });
+            });
+        });
         document.getElementById('spec-title-input').value = name;
         document.getElementById('keep-paste-area').value = '';
         renderStagingArea();
@@ -301,22 +307,30 @@ document.addEventListener('DOMContentLoaded', () => {
             parsedStagingData = [];
             const lines = text.split('\n');
             const regex = /^(\d+(?:\.\d+)?)\s*(?:ml|g|oz|dash|dashes)?\s+(.+)$/i;
-
+            const sectionRegex = /^_{1,}\s*(.+?)\s*_{1,}$/;
+            const syrupKeys = ['syrup', 'sugar', 'agave', 'honey', 'gomme', 'orgeat', 'falernum', 'grenadine', 'cordial'];
+            const liqueurKeys = ['liqueur', 'licor', 'amaro', 'campari', 'aperol', 'vermouth', 'cointreau', 'triple sec', 'chartreuse', 'bénédictine', 'benedictine', 'maraschino', 'amaretto', 'kahlua', 'baileys', 'crème de', 'creme de', 'sambuca', 'absinthe', 'pastis', 'sherry', 'port', 'madeira', 'lillet', 'suze', 'fernet', 'jägermeister', 'jagermeister', 'drambuie', 'galliano', 'frangelico', 'midori', 'curaçao', 'curacao', 'st-germain', 'st. germain', 'bitters', 'wine', 'champagne', 'prosecco', 'cava'];
+            const juiceKeys = ['juice', 'lemon', 'lime', 'orange', 'grapefruit', 'pineapple', 'cranberry', 'apple', 'tomato', 'water', 'soda', 'tonic', 'cola', 'ginger beer', 'coconut', 'milk', 'cream', 'egg', 'puree'];
+            
+            let currentSection = title;
             lines.forEach(line => {
-                const match = line.trim().match(regex);
+                const trimmed = line.trim();
+                if (!trimmed) return;
+                const sectionMatch = trimmed.match(sectionRegex);
+                if (sectionMatch) {
+                    currentSection = `${title} — ${capitalize(sectionMatch[1])}`;
+                    return;
+                }
+                const match = trimmed.match(regex);
                 if (match) {
                     const amt = parseFloat(match[1]);
                     const name = capitalize(match[2].trim());
-                    
                     const lowName = name.toLowerCase();
-                    let tag = 'amber-glow'; // default: spirit
-                    const syrupKeys = ['syrup', 'sugar', 'agave', 'honey', 'gomme', 'orgeat', 'falernum', 'grenadine', 'cordial'];
-                    const liqueurKeys = ['liqueur', 'amaro', 'campari', 'aperol', 'vermouth', 'cointreau', 'triple sec', 'chartreuse', 'bénédictine', 'benedictine', 'maraschino', 'amaretto', 'kahlua', 'baileys', 'crème de', 'creme de', 'sambuca', 'absinthe', 'pastis', 'sherry', 'port', 'madeira', 'lillet', 'suze', 'fernet', 'jägermeister', 'jagermeister', 'drambuie', 'galliano', 'frangelico', 'midori', 'curaçao', 'curacao', 'st-germain', 'st. germain', 'bitters', 'wine', 'champagne', 'prosecco', 'cava'];
-                    const juiceKeys = ['juice', 'lemon', 'lime', 'orange', 'grapefruit', 'pineapple', 'cranberry', 'apple', 'tomato', 'water', 'soda', 'tonic', 'cola', 'ginger beer', 'coconut', 'milk', 'cream', 'egg'];
+                    let tag = 'amber-glow';
                     if (syrupKeys.some(k => lowName.includes(k))) tag = 'magenta-glow';
                     else if (liqueurKeys.some(k => lowName.includes(k))) tag = 'neon-cyan';
                     else if (juiceKeys.some(k => lowName.includes(k))) tag = 'juice-glow';
-                    parsedStagingData.push({ cocktailName: title, ingredientName: name, amount: amt, bottleSize: 0, categoryTag: tag });
+                    parsedStagingData.push({ cocktailName: currentSection, ingredientName: name, amount: amt, bottleSize: 0, categoryTag: tag });
                 }
             });
             renderStagingArea();
@@ -330,27 +344,34 @@ document.addEventListener('DOMContentLoaded', () => {
         
         if(parsedStagingData.length === 0) {
             container.classList.add('hidden');
-            triggerHaptic('error');
             return alert("No ingredients found. Check format (e.g., '30ml Gin').");
         }
 
+        const labels = { 'amber-glow': 'SPIRIT', 'neon-cyan': 'LIQUEUR', 'magenta-glow': 'SYRUP', 'juice-glow': 'JUICE' };
+        const groups = {};
         parsedStagingData.forEach((ing, i) => {
-            const row = document.createElement('div');
-            row.className = 'staging-row';
-            
-            let catName = "SPIRIT";
-            if(ing.categoryTag === 'neon-cyan') catName = "LIQUEUR";
-            if(ing.categoryTag === 'magenta-glow') catName = "SYRUP";
-            if(ing.categoryTag === 'juice-glow') catName = "JUICE";
+            if (!groups[ing.cocktailName]) groups[ing.cocktailName] = [];
+            groups[ing.cocktailName].push({ ing, originalIndex: i });
+        });
 
-            row.innerHTML = `
-                <div class="staging-inputs">
-                    <input type="number" class="stage-amt" value="${ing.amount}" onchange="updateStaging(${i}, 'amount', this.value)">
-                    <input type="text" class="stage-name" value="${ing.ingredientName}" onchange="updateStaging(${i}, 'ingredientName', this.value)">
-                </div>
-                <button class="stage-cat ${ing.categoryTag}" onclick="cycleCategory(${i})">${catName}</button>
-            `;
-            list.appendChild(row);
+        Object.entries(groups).forEach(([sectionName, items]) => {
+            const header = document.createElement('div');
+            header.className = 'staging-section-header';
+            header.innerText = sectionName;
+            list.appendChild(header);
+            
+            items.forEach(({ ing, originalIndex }) => {
+                const row = document.createElement('div');
+                row.className = 'staging-row';
+                row.innerHTML = `
+                    <div class="staging-inputs">
+                        <input type="number" class="stage-amt" value="${ing.amount}" onchange="updateStaging(${originalIndex}, 'amount', this.value)">
+                        <input type="text" class="stage-name" value="${ing.ingredientName}" onchange="updateStaging(${originalIndex}, 'ingredientName', this.value)">
+                    </div>
+                    <button class="stage-cat ${ing.categoryTag}" onclick="cycleCategory(${originalIndex})">${labels[ing.categoryTag]}</button>
+                `;
+                list.appendChild(row);
+            });
         });
         container.classList.remove('hidden');
     }
@@ -383,7 +404,10 @@ document.addEventListener('DOMContentLoaded', () => {
             showLoader("PUSHING TO CODEX...");
             try {
                 if (editingCocktailName) {
-                    await fetch(API_URL, { method: 'POST', body: JSON.stringify({ action: 'delete', cocktailName: editingCocktailName }) });
+                    const toDelete = [editingCocktailName, ...Object.keys(recipeVault).filter(n => n.startsWith(editingCocktailName + ' — '))];
+                    for (const n of toDelete) {
+                        await fetch(API_URL, { method: 'POST', body: JSON.stringify({ action: 'delete', cocktailName: n }) });
+                    }
                 }
                 await fetch(API_URL, { method: 'POST', body: JSON.stringify(parsedStagingData) });
                 
