@@ -123,6 +123,10 @@ body { background-color: var(--bg-oled); color: var(--text-main); display: flex;
 .pill-group::before { content: ''; position: absolute; top: 4px; bottom: 4px; left: 4px; width: calc(50% - 4px); background: var(--nodee-gold); border-radius: 10px; transition: transform 0.35s cubic-bezier(0.16, 1, 0.3, 1); z-index: 1; box-shadow: 0 2px 12px rgba(200, 169, 126, 0.25); }
 .pill-group:has(> button:nth-child(2).active)::before { transform: translateX(100%); }
 
+/* Stacked Select Fields */
+.select-stack { display: flex; flex-direction: column; gap: 16px; }
+.select-field { display: flex; flex-direction: column; gap: 8px; }
+.select-label { font-size: 0.7rem; letter-spacing: 2px; font-weight: 900; color: var(--text-muted); padding-left: 4px; }
 /* Staging Rows (Smart Parser) */
 .staging-row { display: flex; gap: 10px; align-items: center; padding: 10px 0; border-bottom: 1px solid #222; }
 .staging-inputs { flex: 1; display: flex; gap: 8px; min-width: 0; }
