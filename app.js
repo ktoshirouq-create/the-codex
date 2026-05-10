@@ -185,8 +185,8 @@ document.addEventListener('DOMContentLoaded', () => {
 
         specs.forEach(cocktail => {
             recipeVault[cocktail].sort((a, b) => {
-                const order = { 'amber-glow': 1, 'neon-cyan': 2, 'magenta-glow': 3 };
-                return (order[a.color] || 4) - (order[b.color] || 4);
+                const order = { 'amber-glow': 1, 'neon-cyan': 2, 'juice-glow': 3, 'magenta-glow': 4 };
+                return (order[a.color] || 5) - (order[b.color] || 5);
             });
 
             const vItem = document.createElement('div');
@@ -308,13 +308,14 @@ document.addEventListener('DOMContentLoaded', () => {
                     const amt = parseFloat(match[1]);
                     const name = capitalize(match[2].trim());
                     
-                    let tag = 'amber-glow'; 
                     const lowName = name.toLowerCase();
-                    if (lowName.includes('syrup') || lowName.includes('sugar') || lowName.includes('agave') || lowName.includes('honey')) {
-                        tag = 'magenta-glow'; 
-                    } else if (lowName.includes('liqueur') || lowName.includes('amaro') || lowName.includes('campari') || lowName.includes('vermouth')) {
-                        tag = 'neon-cyan'; 
-                    }
+                    let tag = 'amber-glow'; // default: spirit
+                    const syrupKeys = ['syrup', 'sugar', 'agave', 'honey', 'gomme', 'orgeat', 'falernum', 'grenadine', 'cordial'];
+                    const liqueurKeys = ['liqueur', 'amaro', 'campari', 'aperol', 'vermouth', 'cointreau', 'triple sec', 'chartreuse', 'bénédictine', 'benedictine', 'maraschino', 'amaretto', 'kahlua', 'baileys', 'crème de', 'creme de', 'sambuca', 'absinthe', 'pastis', 'sherry', 'port', 'madeira', 'lillet', 'suze', 'fernet', 'jägermeister', 'jagermeister', 'drambuie', 'galliano', 'frangelico', 'midori', 'curaçao', 'curacao', 'st-germain', 'st. germain', 'bitters', 'wine', 'champagne', 'prosecco', 'cava'];
+                    const juiceKeys = ['juice', 'lemon', 'lime', 'orange', 'grapefruit', 'pineapple', 'cranberry', 'apple', 'tomato', 'water', 'soda', 'tonic', 'cola', 'ginger beer', 'coconut', 'milk', 'cream', 'egg'];
+                    if (syrupKeys.some(k => lowName.includes(k))) tag = 'magenta-glow';
+                    else if (liqueurKeys.some(k => lowName.includes(k))) tag = 'neon-cyan';
+                    else if (juiceKeys.some(k => lowName.includes(k))) tag = 'juice-glow';
                     parsedStagingData.push({ cocktailName: title, ingredientName: name, amount: amt, bottleSize: 0, categoryTag: tag });
                 }
             });
@@ -340,6 +341,7 @@ document.addEventListener('DOMContentLoaded', () => {
             let catName = "SPIRIT";
             if(ing.categoryTag === 'neon-cyan') catName = "LIQUEUR";
             if(ing.categoryTag === 'magenta-glow') catName = "SYRUP";
+            if(ing.categoryTag === 'juice-glow') catName = "JUICE";
 
             row.innerHTML = `
                 <div class="staging-inputs">
@@ -360,11 +362,17 @@ document.addEventListener('DOMContentLoaded', () => {
 
     window.cycleCategory = (index) => {
         triggerHaptic('light');
-        const tags = ['amber-glow', 'neon-cyan', 'magenta-glow'];
+        const tags = ['amber-glow', 'neon-cyan', 'magenta-glow', 'juice-glow'];
+        const labels = { 'amber-glow': 'SPIRIT', 'neon-cyan': 'LIQUEUR', 'magenta-glow': 'SYRUP', 'juice-glow': 'JUICE' };
         let curr = tags.indexOf(parsedStagingData[index].categoryTag);
         let next = (curr + 1) % tags.length;
-        parsedStagingData[index].categoryTag = tags[next];
-        renderStagingArea();
+        const newTag = tags[next];
+        parsedStagingData[index].categoryTag = newTag;
+        const rows = document.querySelectorAll('#staging-list .staging-row');
+        if (rows[index]) {
+            const btn = rows[index].querySelector('.stage-cat');
+            if (btn) { btn.className = `stage-cat ${newTag}`; btn.innerText = labels[newTag]; }
+        }
     };
 
     const syncBtn = document.getElementById('sync-vault-btn');
