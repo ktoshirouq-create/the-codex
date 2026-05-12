@@ -386,9 +386,16 @@ document.addEventListener('DOMContentLoaded', () => {
             });
             if (secIdx > 0) {
                 sectionEl.querySelector('.builder-section-remove').addEventListener('click', () => {
-                    if (!confirm(`Remove section "${sec.name}"?`)) return;
-                    builderState.sections.splice(secIdx, 1);
-                    renderBuilder();
+                    openConfirmModal({
+                        title: 'REMOVE SECTION',
+                        message: `Remove "${sec.name}"? Ingredients in it will be lost.`,
+                        confirmLabel: 'REMOVE',
+                        danger: true,
+                        onConfirm: () => {
+                            builderState.sections.splice(secIdx, 1);
+                            renderBuilder();
+                        }
+                    });
                 });
             }
             container.appendChild(sectionEl);
@@ -435,7 +442,10 @@ document.addEventListener('DOMContentLoaded', () => {
         saveSpecBtn.addEventListener('click', async () => {
             triggerHaptic('heavy');
             const name = capitalize(document.getElementById('builder-name').value.trim());
-            if (!name) return alert("Cocktail name required.");
+            if (!name) {
+                openAlertModal({ title: 'NAME REQUIRED', message: 'Add a cocktail name before saving.' });
+                return;
+            }
             const payload = [];
             builderState.sections.forEach(sec => {
                 const sectionName = sec.name === 'MAIN' ? name : `${name} — ${sec.name}`;
@@ -450,7 +460,10 @@ document.addEventListener('DOMContentLoaded', () => {
                     });
                 });
             });
-            if (payload.length === 0) return alert("Add at least one ingredient with name and amount.");
+            if (payload.length === 0) {
+                openAlertModal({ title: 'NO INGREDIENTS', message: 'Add at least one ingredient with name and amount.' });
+                return;
+            }
             showLoader("SAVING SPEC...");
             try {
                 if (editingCocktailName) {
@@ -464,7 +477,7 @@ document.addEventListener('DOMContentLoaded', () => {
                 await loadVault();
             } catch (e) {
                 hideLoader();
-                alert("Save failed. Try again.");
+                openAlertModal({ title: 'SAVE FAILED', message: 'Something went wrong. Please try again.' });
             }
         });
     }
@@ -500,14 +513,21 @@ document.addEventListener('DOMContentLoaded', () => {
         document.getElementById('scroll-area').scrollTop = 0;
     };
 
-    window.deleteSpec = async (name) => {
-        if (!confirm(`Delete '${name}'?`)) return;
-        triggerHaptic('heavy');
-        showLoader("DELETING...");
-        try {
-            await fetch(API_URL, { method: 'POST', body: JSON.stringify({ action: 'delete', cocktailName: name }) });
-            await loadVault();
-        } catch (e) { hideLoader(); }
+    window.deleteSpec = (name) => {
+        openConfirmModal({
+            title: 'DELETE SPEC',
+            message: `Delete "${name}"? This can't be undone.`,
+            confirmLabel: 'DELETE',
+            danger: true,
+            onConfirm: async () => {
+                triggerHaptic('heavy');
+                showLoader("DELETING...");
+                try {
+                    await fetch(API_URL, { method: 'POST', body: JSON.stringify({ action: 'delete', cocktailName: name }) });
+                    await loadVault();
+                } catch (e) { hideLoader(); }
+            }
+        });
     };
 
     // --- SMART PARSER ---
@@ -517,7 +537,7 @@ document.addEventListener('DOMContentLoaded', () => {
             triggerHaptic('light');
             const title = capitalize(document.getElementById('spec-title-input').value.trim());
             const text = document.getElementById('keep-paste-area').value;
-            if(!title || !text) return alert("Need Title and Recipe Text.");
+            if(!title || !text) {                 openAlertModal({ title: 'MISSING INFO', message: 'Need both a cocktail title and recipe text.' });                 return;             }
             if (editingCocktailName && editingCocktailName !== title) editingCocktailName = null;
 
             parsedStagingData = [];
@@ -560,7 +580,8 @@ document.addEventListener('DOMContentLoaded', () => {
         
         if(parsedStagingData.length === 0) {
             container.classList.add('hidden');
-            return alert("No ingredients found. Check format (e.g., '30ml Gin').");
+            openAlertModal({ title: 'NO INGREDIENTS', message: "Couldn't find any ingredients. Check your format (e.g., '30ml Gin')." });
+            return;
         }
 
         const labels = { 'amber-glow': 'SPIRIT', 'neon-cyan': 'LIQUEUR', 'magenta-glow': 'SYRUP', 'juice-glow': 'JUICE' };
