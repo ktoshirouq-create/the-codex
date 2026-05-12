@@ -97,7 +97,7 @@ document.addEventListener('DOMContentLoaded', () => {
     const dragHandle = document.querySelector('.drag-handle');
     let dragStartY = 0; let dragCurrentY = 0; let isDragging = false;
 
-    function openSelectModal(title, options, onSelect) {
+    function openSelectModal(title, options, onSelect, customInput = null) {
         triggerHaptic();
         document.getElementById('selection-modal-title').innerText = title;
         const list = document.getElementById('selection-modal-list');
@@ -110,6 +110,28 @@ document.addEventListener('DOMContentLoaded', () => {
             item.onclick = () => { triggerHaptic(); onSelect(opt.value, opt.label, opt.data); closeSelectModal(); };
             list.appendChild(item);
         });
+        
+        if (customInput) {
+            const wrap = document.createElement('div');
+            wrap.className = 'modal-custom-input';
+            wrap.innerHTML = `
+                <input type="text" class="premium-text-input" placeholder="${customInput.placeholder || 'Custom...'}" style="margin-bottom: 0;">
+                <button class="btn-primary" style="margin-top: 12px;">${customInput.btnLabel || 'ADD'}</button>
+            `;
+            const input = wrap.querySelector('input');
+            const btn = wrap.querySelector('button');
+            btn.addEventListener('click', () => {
+                const val = input.value.trim();
+                if (!val) return;
+                triggerHaptic('heavy');
+                customInput.onSubmit(val);
+                closeSelectModal();
+            });
+            input.addEventListener('keydown', e => { if (e.key === 'Enter') btn.click(); });
+            list.appendChild(wrap);
+            setTimeout(() => input.focus(), 350);
+        }
+        
         modal.classList.remove('hidden');
     }
 
@@ -347,10 +369,26 @@ document.addEventListener('DOMContentLoaded', () => {
     if (addSectionBtn) {
         addSectionBtn.addEventListener('click', () => {
             triggerHaptic('light');
-            const name = prompt("Section name (e.g., Spirit Batch, Juice Batch, Cream):");
-            if (!name || !name.trim()) return;
-            builderState.sections.push({ name: capitalize(name.trim()), ingredients: [] });
-            renderBuilder();
+            const presets = [
+                { label: 'Spirit Batch', value: 'Spirit Batch' },
+                { label: 'Juice Batch', value: 'Juice Batch' },
+                { label: 'Cream', value: 'Cream' },
+                { label: 'Mocktail', value: 'Mocktail' }
+            ];
+            openSelectModal('ADD SECTION', presets,
+                (val) => {
+                    builderState.sections.push({ name: val, ingredients: [] });
+                    renderBuilder();
+                },
+                {
+                    placeholder: 'Or type custom section name...',
+                    btnLabel: 'ADD CUSTOM',
+                    onSubmit: (val) => {
+                        builderState.sections.push({ name: capitalize(val), ingredients: [] });
+                        renderBuilder();
+                    }
+                }
+            );
         });
     }
 
