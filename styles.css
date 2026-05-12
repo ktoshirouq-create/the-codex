@@ -36,7 +36,8 @@ body { background-color: var(--bg-oled); color: var(--text-main); display: flex;
 .modal-header { display: flex; justify-content: space-between; align-items: center; padding: 5px 5px 18px; border-bottom: 1px solid rgba(255,255,255,0.06); margin-bottom: 14px; }
 .modal-list { display: flex; flex-direction: column; gap: 8px; overflow-y: auto; padding-bottom: 20px; max-height: 60vh; -webkit-overflow-scrolling: touch; }
 .modal-item { padding: 18px 18px; font-size: 1rem; font-weight: 500; color: var(--text-main); background: rgba(255,255,255,0.04); border: 1px solid rgba(255,255,255,0.06); border-radius: 12px; cursor: pointer; transition: background 0.15s ease, border-color 0.15s ease, transform 0.1s ease; }
-.modal-item:active { background: rgba(200, 169, 126, 0.15); border-color: var(--nodee-gold); transform: scale(0.98); }
+.modal.modal-item:active { background: rgba(200, 169, 126, 0.15); border-color: var(--nodee-gold); transform: scale(0.98); }
+.modal-custom-input { margin-top: 14px; padding-top: 14px; border-top: 1px solid rgba(255,255,255,0.08); }
 /* Layout */
 .top-bar { display: flex; justify-content: space-between; align-items: center; padding: 30px 20px 10px; background: var(--bg-oled); z-index: 10; }
 .brand { font-size: 1.2rem; letter-spacing: 4px; font-weight: 900; }
