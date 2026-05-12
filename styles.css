@@ -156,6 +156,24 @@ body { background-color: var(--bg-oled); color: var(--text-main); display: flex;
 .stage-cat.magenta-glow { background: var(--magenta-glow); }
 .stage-cat.juice-glow { background: var(--juice-glow); }
 
+/* Spec Builder */
+.builder-section { margin-top: 22px; padding-top: 18px; border-top: 1px solid #222; }
+.builder-section:first-child { border-top: none; padding-top: 0; margin-top: 18px; }
+.builder-section-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 12px; }
+.builder-section-title { font-size: 0.8rem; font-weight: 900; letter-spacing: 2px; color: var(--nodee-gold); text-transform: uppercase; }
+.builder-section-remove { color: var(--text-muted); font-size: 1.2rem; padding: 2px 8px; cursor: pointer; }
+.builder-row { display: flex; gap: 8px; align-items: center; margin-bottom: 8px; }
+.builder-row-amount { width: 64px; background: rgba(255,255,255,0.04); border: 1px solid #222; border-radius: 10px; padding: 10px 6px; color: var(--nodee-gold); font-size: 1rem; font-weight: 700; text-align: center; }
+.builder-row-name { flex: 1; min-width: 0; background: rgba(255,255,255,0.04); border: 1px solid #222; border-radius: 10px; padding: 10px 12px; color: var(--text-main); font-size: 0.95rem; }
+.builder-row-cat { padding: 10px 8px; border-radius: 10px; font-size: 0.62rem; font-weight: 900; letter-spacing: 1px; color: #000; flex-shrink: 0; min-width: 70px; cursor: pointer; text-align: center; }
+.builder-row-cat.amber-glow { background: var(--amber-glow); }
+.builder-row-cat.neon-cyan { background: var(--neon-cyan); }
+.builder-row-cat.juice-glow { background: var(--juice-glow); }
+.builder-row-cat.magenta-glow { background: var(--magenta-glow); }
+.builder-row-remove { background: none; color: var(--text-muted); font-size: 1.4rem; padding: 0 4px; flex-shrink: 0; cursor: pointer; }
+.builder-add-ing { width: 100%; background: rgba(255,255,255,0.03); border: 1px dashed rgba(255,255,255,0.15); color: var(--text-muted); padding: 12px; border-radius: 10px; font-size: 0.8rem; font-weight: 700; letter-spacing: 1px; margin-top: 10px; cursor: pointer; }
+.builder-add-ing:active { background: rgba(255,255,255,0.08); color: var(--text-main); }
+
 /* Bottom Nav */
 .bottom-nav { position: fixed; bottom: 0; width: 100%; background: rgba(10,10,10,0.95); backdrop-filter: blur(20px); border-top: 1px solid #222; display: flex; z-index: 100; padding-bottom: env(safe-area-inset-bottom); }
 .nav-tab { flex: 1; padding: 15px 0; display: flex; flex-direction: column; align-items: center; color: var(--text-muted); }
