@@ -151,6 +151,44 @@ document.addEventListener('DOMContentLoaded', () => {
         document.getElementById('close-selection-modal').onclick = closeSelectModal;
     }
 
+    function openConfirmModal({ title = 'CONFIRM', message, confirmLabel = 'CONFIRM', cancelLabel = 'CANCEL', danger = false, onConfirm }) {
+        triggerHaptic();
+        document.getElementById('selection-modal-title').innerText = title;
+        const list = document.getElementById('selection-modal-list');
+        list.innerHTML = '';
+        const messageEl = document.createElement('div');
+        messageEl.className = 'modal-message';
+        messageEl.innerText = message;
+        list.appendChild(messageEl);
+        const actions = document.createElement('div');
+        actions.className = 'modal-actions';
+        actions.innerHTML = `
+            <button class="btn-secondary">${cancelLabel}</button>
+            <button class="btn-primary ${danger ? 'burgundy-btn' : ''}">${confirmLabel}</button>
+        `;
+        actions.children[0].addEventListener('click', () => { triggerHaptic('light'); closeSelectModal(); });
+        actions.children[1].addEventListener('click', () => { triggerHaptic('heavy'); closeSelectModal(); if (onConfirm) onConfirm(); });
+        list.appendChild(actions);
+        modal.classList.remove('hidden');
+    }
+
+    function openAlertModal({ title = 'NOTICE', message, onClose }) {
+        triggerHaptic();
+        document.getElementById('selection-modal-title').innerText = title;
+        const list = document.getElementById('selection-modal-list');
+        list.innerHTML = '';
+        const messageEl = document.createElement('div');
+        messageEl.className = 'modal-message';
+        messageEl.innerText = message;
+        list.appendChild(messageEl);
+        const actions = document.createElement('div');
+        actions.className = 'modal-actions';
+        actions.innerHTML = `<button class="btn-primary">OK</button>`;
+        actions.children[0].addEventListener('click', () => { triggerHaptic('light'); closeSelectModal(); if (onClose) onClose(); });
+        list.appendChild(actions);
+        modal.classList.remove('hidden');
+    }
+
     if (dragZone && dragHandle && modalContent) {
         const startDrag = (e) => { dragStartY = e.touches[0].clientY; isDragging = true; modalContent.style.transition = 'none'; };
         const moveDrag = (e) => {
