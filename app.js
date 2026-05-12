@@ -267,20 +267,160 @@ document.addEventListener('DOMContentLoaded', () => {
         });
     }
 
+    // --- SPEC BUILDER ---
+    let builderState = { name: '', sections: [{ name: 'MAIN', ingredients: [] }] };
+    const catLabels = { 'amber-glow': 'SPIRIT', 'neon-cyan': 'LIQUEUR', 'juice-glow': 'JUICE', 'magenta-glow': 'SYRUP' };
+
+    function renderBuilder() {
+        const container = document.getElementById('builder-sections');
+        if (!container) return;
+        container.innerHTML = '';
+        builderState.sections.forEach((sec, secIdx) => {
+            const sectionEl = document.createElement('div');
+            sectionEl.className = 'builder-section';
+            sectionEl.innerHTML = `
+                <div class="builder-section-header">
+                    <span class="builder-section-title">${sec.name}</span>
+                    ${secIdx > 0 ? '<button class="builder-section-remove">×</button>' : ''}
+                </div>
+                <div class="builder-rows"></div>
+                <button class="builder-add-ing">＋ INGREDIENT</button>
+            `;
+            const rowsEl = sectionEl.querySelector('.builder-rows');
+            sec.ingredients.forEach((ing, ingIdx) => {
+                const row = document.createElement('div');
+                row.className = 'builder-row';
+                row.innerHTML = `
+                    <input type="number" class="builder-row-amount" value="${ing.amount || ''}" placeholder="0">
+                    <input type="text" class="builder-row-name" value="${(ing.name || '').replace(/"/g, '&quot;')}" placeholder="Ingredient">
+                    <button class="builder-row-cat ${ing.cat}">${catLabels[ing.cat] || 'SPIRIT'}</button>
+                    <button class="builder-row-remove">×</button>
+                `;
+                row.querySelector('.builder-row-amount').addEventListener('input', e => {
+                    builderState.sections[secIdx].ingredients[ingIdx].amount = parseFloat(e.target.value) || 0;
+                });
+                row.querySelector('.builder-row-name').addEventListener('input', e => {
+                    builderState.sections[secIdx].ingredients[ingIdx].name = e.target.value;
+                });
+                row.querySelector('.builder-row-cat').addEventListener('click', () => {
+                    triggerHaptic('light');
+                    const cats = ['amber-glow', 'neon-cyan', 'juice-glow', 'magenta-glow'];
+                    const current = builderState.sections[secIdx].ingredients[ingIdx].cat;
+                    const next = cats[(cats.indexOf(current) + 1) % cats.length];
+                    builderState.sections[secIdx].ingredients[ingIdx].cat = next;
+                    const btn = row.querySelector('.builder-row-cat');
+                    btn.className = `builder-row-cat ${next}`;
+                    btn.innerText = catLabels[next];
+                });
+                row.querySelector('.builder-row-remove').addEventListener('click', () => {
+                    triggerHaptic('light');
+                    builderState.sections[secIdx].ingredients.splice(ingIdx, 1);
+                    renderBuilder();
+                });
+                rowsEl.appendChild(row);
+            });
+            sectionEl.querySelector('.builder-add-ing').addEventListener('click', () => {
+                triggerHaptic('light');
+                builderState.sections[secIdx].ingredients.push({ amount: 0, name: '', cat: 'amber-glow' });
+                renderBuilder();
+            });
+            if (secIdx > 0) {
+                sectionEl.querySelector('.builder-section-remove').addEventListener('click', () => {
+                    if (!confirm(`Remove section "${sec.name}"?`)) return;
+                    builderState.sections.splice(secIdx, 1);
+                    renderBuilder();
+                });
+            }
+            container.appendChild(sectionEl);
+        });
+    }
+
+    function resetBuilder() {
+        builderState = { name: '', sections: [{ name: 'MAIN', ingredients: [] }] };
+        const nameInput = document.getElementById('builder-name');
+        if (nameInput) nameInput.value = '';
+        editingCocktailName = null;
+        renderBuilder();
+    }
+
+    const addSectionBtn = document.getElementById('add-section-btn');
+    if (addSectionBtn) {
+        addSectionBtn.addEventListener('click', () => {
+            triggerHaptic('light');
+            const name = prompt("Section name (e.g., Spirit Batch, Juice Batch, Cream):");
+            if (!name || !name.trim()) return;
+            builderState.sections.push({ name: capitalize(name.trim()), ingredients: [] });
+            renderBuilder();
+        });
+    }
+
+    const saveSpecBtn = document.getElementById('save-spec-btn');
+    if (saveSpecBtn) {
+        saveSpecBtn.addEventListener('click', async () => {
+            triggerHaptic('heavy');
+            const name = capitalize(document.getElementById('builder-name').value.trim());
+            if (!name) return alert("Cocktail name required.");
+            const payload = [];
+            builderState.sections.forEach(sec => {
+                const sectionName = sec.name === 'MAIN' ? name : `${name} — ${sec.name}`;
+                sec.ingredients.forEach(ing => {
+                    if (!ing.name.trim() || !ing.amount) return;
+                    payload.push({
+                        cocktailName: sectionName,
+                        ingredientName: capitalize(ing.name.trim()),
+                        amount: parseFloat(ing.amount),
+                        bottleSize: 0,
+                        categoryTag: ing.cat
+                    });
+                });
+            });
+            if (payload.length === 0) return alert("Add at least one ingredient with name and amount.");
+            showLoader("SAVING SPEC...");
+            try {
+                if (editingCocktailName) {
+                    const toDelete = [editingCocktailName, ...Object.keys(recipeVault).filter(n => n.startsWith(editingCocktailName + ' — '))];
+                    for (const n of toDelete) {
+                        await fetch(API_URL, { method: 'POST', body: JSON.stringify({ action: 'delete', cocktailName: n }) });
+                    }
+                }
+                await fetch(API_URL, { method: 'POST', body: JSON.stringify(payload) });
+                resetBuilder();
+                await loadVault();
+            } catch (e) {
+                hideLoader();
+                alert("Save failed. Try again.");
+            }
+        });
+    }
+
+    const toggleBulkBtn = document.getElementById('toggle-bulk-import');
+    if (toggleBulkBtn) {
+        toggleBulkBtn.addEventListener('click', () => {
+            triggerHaptic('light');
+            const ui = document.getElementById('bulk-import-ui');
+            if (ui) ui.classList.toggle('hidden');
+        });
+    }
+
+    renderBuilder();
+
     // --- EDIT & DELETE ---
     window.editSpec = (name) => {
         triggerHaptic('heavy');
         editingCocktailName = name;
         const related = [name, ...Object.keys(recipeVault).filter(n => n.startsWith(name + ' — '))];
-        parsedStagingData = [];
+        builderState = { name: name, sections: [] };
         related.forEach(sectionName => {
+            const isMain = sectionName === name;
+            const sec = { name: isMain ? 'MAIN' : sectionName.replace(name + ' — ', ''), ingredients: [] };
             (recipeVault[sectionName] || []).forEach(ing => {
-                parsedStagingData.push({ cocktailName: sectionName, ingredientName: ing.name, amount: ing.amount, bottleSize: 0, categoryTag: ing.color });
+                sec.ingredients.push({ amount: ing.amount, name: ing.name, cat: ing.color });
             });
+            builderState.sections.push(sec);
         });
-        document.getElementById('spec-title-input').value = name;
-        document.getElementById('keep-paste-area').value = '';
-        renderStagingArea();
+        builderState.sections.sort((a, b) => (a.name === 'MAIN' ? -1 : (b.name === 'MAIN' ? 1 : 0)));
+        document.getElementById('builder-name').value = name;
+        renderBuilder();
         document.getElementById('scroll-area').scrollTop = 0;
     };
 
@@ -811,6 +951,7 @@ document.addEventListener('DOMContentLoaded', () => {
                 document.getElementById('keep-paste-area').value = '';
                 document.getElementById('staging-area').classList.add('hidden');
                 parsedStagingData = [];
+                resetBuilder();
             }
         });
     }
