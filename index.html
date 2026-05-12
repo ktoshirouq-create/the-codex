@@ -35,14 +35,22 @@
         
         <section id="codex-module" class="module active">
             <div id="admin-parser-ui" class="card glass-panel edit-panel hidden">
-                <h2 class="card-title text-gold">SMART PARSER</h2>
-                <input type="text" id="spec-title-input" class="premium-text-input" placeholder="Cocktail Title">
-                <textarea id="keep-paste-area" class="premium-text-input" placeholder="Paste Keep recipe here..." rows="4"></textarea>
-                <button id="parse-btn" class="btn-secondary">PARSE SPEC</button>
-                <div id="staging-area" class="hidden" style="margin-top: 20px;">
-                    <h3 class="zone-header">STAGING REVIEW</h3>
-                    <div id="staging-list"></div>
-                    <button id="sync-vault-btn" class="btn-primary burgundy-btn" style="margin-top: 20px;">SYNC TO VAULT</button>
+                <h2 class="card-title text-gold">SPEC BUILDER</h2>
+                <input type="text" id="builder-name" class="premium-text-input" placeholder="Cocktail Name">
+                <div id="builder-sections"></div>
+                <button id="add-section-btn" class="btn-secondary" style="margin-top: 12px;">＋ ADD SECTION</button>
+                <button id="save-spec-btn" class="btn-primary" style="margin-top: 20px;">SAVE SPEC</button>
+
+                <button id="toggle-bulk-import" class="btn-secondary" style="background: rgba(255,255,255,0.02); color: var(--text-muted); font-size: 0.7rem; font-weight: 700; margin-top: 30px; letter-spacing: 2px;">＋ BULK IMPORT (FROM KEEP)</button>
+                <div id="bulk-import-ui" class="hidden" style="margin-top: 18px;">
+                    <input type="text" id="spec-title-input" class="premium-text-input" placeholder="Cocktail Title">
+                    <textarea id="keep-paste-area" class="premium-text-input" placeholder="Paste Keep recipe here..." rows="4"></textarea>
+                    <button id="parse-btn" class="btn-secondary">PARSE SPEC</button>
+                    <div id="staging-area" class="hidden" style="margin-top: 20px;">
+                        <h3 class="zone-header">STAGING REVIEW</h3>
+                        <div id="staging-list"></div>
+                        <button id="sync-vault-btn" class="btn-primary burgundy-btn" style="margin-top: 20px;">SYNC TO VAULT</button>
+                    </div>
                 </div>
             </div>
 
