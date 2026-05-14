@@ -314,7 +314,7 @@ document.addEventListener('DOMContentLoaded', () => {
             header.className = 'vault-header';
             header.innerHTML = `
                 <span class="cocktail-title">${cocktail}</span>
-                <div class="admin-controls hidden">
+                <div class="admin-controls">
                     <button class="action-btn edit" onclick="event.stopPropagation(); editSpec('${escapedName}')">EDIT</button>
                     <button class="action-btn delete" onclick="event.stopPropagation(); deleteSpec('${escapedName}')">DEL</button>
                 </div>
@@ -370,11 +370,7 @@ document.addEventListener('DOMContentLoaded', () => {
             list.appendChild(vItem);
         });
 
-        const toggleBtn = document.getElementById('edit-toggle');
-        if(toggleBtn && toggleBtn.innerText !== 'LOCKED') {
-            document.querySelectorAll('.admin-controls').forEach(el => el.classList.remove('hidden'));
-        }
-    }
+            }
 
     window.updateRound = (cocktailId, change) => {
         triggerHaptic('light');
@@ -572,6 +568,10 @@ document.addEventListener('DOMContentLoaded', () => {
     }
 
     renderBuilder();
+
+    // Kill the legacy LOCKED toggle — Spec Builder + EDIT/DEL now always visible
+    const legacyLockBtn = document.getElementById('edit-toggle');
+    if (legacyLockBtn) legacyLockBtn.remove();
 
     // --- EDIT & DELETE ---
     window.editSpec = (name) => {
