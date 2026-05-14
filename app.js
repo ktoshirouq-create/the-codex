@@ -483,6 +483,7 @@ document.addEventListener('DOMContentLoaded', () => {
         const nameInput = document.getElementById('builder-name');
         if (nameInput) nameInput.value = '';
         editingCocktailName = null;
+        if (typeof closeBatchBuilder === 'function') closeBatchBuilder();
         renderBuilder();
     }
 
