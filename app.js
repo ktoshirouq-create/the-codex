@@ -451,7 +451,7 @@ document.addEventListener('DOMContentLoaded', () => {
                 row.className = 'builder-row';
                 row.innerHTML = `
                     <input type="number" class="builder-row-amount" value="${ing.amount || ''}" placeholder="0">
-                    <input type="text" class="builder-row-name" value="${(ing.name || '').replace(/"/g, '&quot;')}" placeholder="Ingredient">
+                    <input type="text" class="builder-row-name" list="shelf-suggestions" autocomplete="off" value="${(ing.name || '').replace(/"/g, '&quot;')}" placeholder="Ingredient">
                     <button class="builder-row-cat ${ing.cat}">${catLabels[ing.cat] || 'SPIRIT'}</button>
                     <button class="builder-row-remove">×</button>
                 `;
@@ -459,7 +459,21 @@ document.addEventListener('DOMContentLoaded', () => {
                     builderState.sections[secIdx].ingredients[ingIdx].amount = parseFloat(e.target.value) || 0;
                 });
                 row.querySelector('.builder-row-name').addEventListener('input', e => {
-                    builderState.sections[secIdx].ingredients[ingIdx].name = e.target.value;
+                    const val = e.target.value;
+                    builderState.sections[secIdx].ingredients[ingIdx].name = val;
+                    // Match against shelf case-insensitively; if found, auto-set category to match the shelf entry
+                    if (typeof shelfData !== 'undefined' && val.trim()) {
+                        const shelfMatch = Object.keys(shelfData).find(k => k.toLowerCase() === val.toLowerCase().trim());
+                        if (shelfMatch) {
+                            const shelfCat = shelfData[shelfMatch].category;
+                            if (builderState.sections[secIdx].ingredients[ingIdx].cat !== shelfCat) {
+                                builderState.sections[secIdx].ingredients[ingIdx].cat = shelfCat;
+                                const catBtn = row.querySelector('.builder-row-cat');
+                                catBtn.className = `builder-row-cat ${shelfCat}`;
+                                catBtn.innerText = catLabels[shelfCat] || 'SPIRIT';
+                            }
+                        }
+                    }
                 });
                 row.querySelector('.builder-row-cat').addEventListener('click', () => {
                     triggerHaptic('light');
@@ -800,6 +814,24 @@ document.addEventListener('DOMContentLoaded', () => {
 
     function saveShelf() {
         try { localStorage.setItem(SHELF_KEY, JSON.stringify(shelfData)); } catch {}
+        refreshShelfDatalist();
+    }
+
+    function refreshShelfDatalist() {
+        let dl = document.getElementById('shelf-suggestions');
+        if (!dl) {
+            dl = document.createElement('datalist');
+            dl.id = 'shelf-suggestions';
+            document.body.appendChild(dl);
+        }
+        dl.innerHTML = '';
+        Object.keys(shelfData)
+            .sort((a, b) => a.localeCompare(b))
+            .forEach(name => {
+                const opt = document.createElement('option');
+                opt.value = name;
+                dl.appendChild(opt);
+            });
     }
 
     window.autoSeedShelf = function() {
@@ -973,6 +1005,7 @@ document.addEventListener('DOMContentLoaded', () => {
     };
 
     loadShelf();
+    refreshShelfDatalist();
     injectShelfCard();
     renderShelf();
 
