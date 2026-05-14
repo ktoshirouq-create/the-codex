@@ -108,6 +108,21 @@ body { background-color: var(--bg-oled); color: var(--text-main); display: flex;
 .service-multiplier { margin-bottom: 18px; }
 .view-toggle { margin-bottom: 18px; }
 
+.admin-controls { display: flex; gap: 8px; }
+.action-btn { padding: 7px 12px; border-radius: 8px; font-size: 0.7rem; font-weight: 900; letter-spacing: 1.5px; cursor: pointer; transition: all 0.15s ease; }
+.action-btn.edit { background: rgba(200, 169, 126, 0.08); color: var(--nodee-gold); border: 1px solid rgba(200, 169, 126, 0.4); }
+.action-btn.edit:active { background: rgba(200, 169, 126, 0.2); }
+.action-btn.delete { background: rgba(217, 124, 142, 0.08); color: #d97c8e; border: 1px solid rgba(217, 124, 142, 0.4); }
+.action-btn.delete:active { background: rgba(217, 124, 142, 0.2); }
+
+.vault-divider { height: 1px; background: linear-gradient(to right, transparent, rgba(200, 169, 126, 0.25), transparent); margin: 26px 0 12px; }
+.vault-subbatch { margin-top: 14px; opacity: 0.62; }
+.vault-subbatch-title { font-size: 0.65rem; font-weight: 800; letter-spacing: 1.8px; color: var(--text-muted); text-transform: uppercase; padding-bottom: 6px; margin-bottom: 4px; border-bottom: 1px solid rgba(255,255,255,0.08); display: flex; justify-content: space-between; align-items: baseline; }
+.vault-yield-label { font-size: 0.55rem; font-weight: 700; color: var(--text-muted); letter-spacing: 1px; opacity: 0.7; }
+.subbatch-row { display: flex; justify-content: space-between; align-items: center; padding: 5px 0; }
+.subbatch-row .ing-name { font-size: 0.8rem; font-weight: 600; text-shadow: none; }
+.subbatch-row .ing-amount { font-size: 0.8rem; font-weight: 700; color: var(--text-muted); font-family: 'JetBrains Mono', monospace; }
+
 .result-row { display: flex; flex-direction: column; padding: 12px 0; border-bottom: 1px solid #111; }
 .ing-name { font-size: 0.9rem; font-weight: 700; color: var(--text-muted); margin-bottom: 4px; }
 .ing-amount { font-size: 1.4rem; font-weight: 300; }
