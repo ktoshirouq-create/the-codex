@@ -204,6 +204,26 @@ body { background-color: var(--bg-oled); color: var(--text-main); display: flex;
 .builder-add-ing { width: 100%; background: rgba(255,255,255,0.03); border: 1px dashed rgba(255,255,255,0.15); color: var(--text-muted); padding: 12px; border-radius: 10px; font-size: 0.8rem; font-weight: 700; letter-spacing: 1px; margin-top: 10px; cursor: pointer; }
 .builder-add-ing:active { background: rgba(255,255,255,0.08); color: var(--text-main); }
 
+/* Batch builder inline form */
+.batch-form { background: rgba(255,255,255,0.03); border: 1px solid rgba(200, 169, 126, 0.2); border-radius: 14px; padding: 16px; margin-top: 12px; }
+.batch-form-title { font-size: 0.75rem; font-weight: 900; letter-spacing: 2px; color: var(--nodee-gold); margin: 0 0 14px 0; text-transform: uppercase; }
+.batch-type-pills { display: flex; gap: 6px; margin-bottom: 14px; flex-wrap: wrap; }
+.batch-type-pill { padding: 9px 8px; background: rgba(255,255,255,0.05); border: 1px solid rgba(255,255,255,0.1); border-radius: 8px; color: var(--text-muted); font-size: 0.7rem; font-weight: 800; letter-spacing: 1px; cursor: pointer; flex: 1; min-width: 50px; }
+.batch-type-pill.active { background: var(--nodee-gold); color: var(--bg-oled); border-color: var(--nodee-gold); }
+.batch-custom-input { margin-bottom: 14px !important; }
+.batch-section-label { font-size: 0.6rem; font-weight: 800; letter-spacing: 1.5px; color: var(--text-muted); margin: 0 0 10px 0; text-transform: uppercase; }
+.batch-per-drink-row { display: flex; align-items: center; gap: 8px; margin-top: 14px; margin-bottom: 6px; }
+.batch-per-drink-label { font-size: 0.85rem; color: var(--text-main); font-weight: 600; }
+.batch-per-drink-input { width: 70px; background: rgba(255,255,255,0.04); border: 1px solid #222; border-radius: 8px; padding: 9px 6px; color: var(--nodee-gold); font-size: 1rem; font-weight: 700; text-align: center; }
+.batch-per-drink-suffix { font-size: 0.85rem; color: var(--text-muted); }
+.batch-yield-display { font-size: 0.7rem; color: var(--text-muted); font-style: italic; margin-bottom: 14px; min-height: 14px; }
+.batch-form-actions { display: flex; gap: 10px; }
+.batch-cancel, .batch-confirm { flex: 1; padding: 12px; border-radius: 10px; font-size: 0.75rem; font-weight: 800; letter-spacing: 1.5px; cursor: pointer; border: none; }
+.batch-cancel { background: rgba(255,255,255,0.05); color: var(--text-muted); }
+.batch-confirm { background: var(--nodee-gold); color: var(--bg-oled); }
+.batch-cancel:active { background: rgba(255,255,255,0.1); }
+.batch-confirm:active { opacity: 0.85; }
+
 /* Bottom Nav */
 .bottom-nav { position: fixed; bottom: 0; width: 100%; background: rgba(10,10,10,0.95); backdrop-filter: blur(20px); border-top: 1px solid #222; display: flex; z-index: 100; padding-bottom: env(safe-area-inset-bottom); }
 .nav-tab { flex: 1; padding: 15px 0; display: flex; flex-direction: column; align-items: center; color: var(--text-muted); }
