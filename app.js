@@ -312,13 +312,7 @@ document.addEventListener('DOMContentLoaded', () => {
 
             const header = document.createElement('div');
             header.className = 'vault-header';
-            header.innerHTML = `
-                <span class="cocktail-title">${cocktail}</span>
-                <div class="admin-controls">
-                    <button class="action-btn edit" onclick="event.stopPropagation(); editSpec('${escapedName}')">EDIT</button>
-                    <button class="action-btn delete" onclick="event.stopPropagation(); deleteSpec('${escapedName}')">DEL</button>
-                </div>
-            `;
+            header.innerHTML = `<span class="cocktail-title">${cocktail}</span>`;
             vItem.appendChild(header);
 
             const details = document.createElement('div');
@@ -366,7 +360,34 @@ document.addEventListener('DOMContentLoaded', () => {
                 renderVaultContent(content, cocktail, subBatches, next);
             });
 
-            vItem.addEventListener('click', () => { triggerHaptic('light'); vItem.classList.toggle('expanded'); });
+            // Quick tap → toggle expand. Long-press → action sheet (edit/delete).
+            let pressTimer = null;
+            let pressStart = null;
+            vItem.addEventListener('pointerdown', (e) => {
+                if (e.target.closest('button') || e.target.closest('input')) return;
+                pressStart = { x: e.clientX, y: e.clientY };
+                pressTimer = setTimeout(() => {
+                    pressTimer = null;
+                    triggerHaptic('medium');
+                    if (typeof window.openActionSheet === 'function') window.openActionSheet(cocktail);
+                }, 500);
+            });
+            vItem.addEventListener('pointermove', (e) => {
+                if (!pressTimer || !pressStart) return;
+                const dx = Math.abs(e.clientX - pressStart.x);
+                const dy = Math.abs(e.clientY - pressStart.y);
+                if (dx > 10 || dy > 10) { clearTimeout(pressTimer); pressTimer = null; }
+            });
+            vItem.addEventListener('pointerup', () => {
+                if (!pressTimer) return;
+                clearTimeout(pressTimer);
+                pressTimer = null;
+                triggerHaptic('light');
+                vItem.classList.toggle('expanded');
+            });
+            vItem.addEventListener('pointercancel', () => {
+                if (pressTimer) { clearTimeout(pressTimer); pressTimer = null; }
+            });
             list.appendChild(vItem);
         });
 
@@ -485,6 +506,7 @@ document.addEventListener('DOMContentLoaded', () => {
         editingCocktailName = null;
         if (typeof closeBatchBuilder === 'function') closeBatchBuilder();
         renderBuilder();
+        if (typeof collapseSpecBuilder === 'function') collapseSpecBuilder();
     }
 
     const addSectionBtn = document.getElementById('add-section-btn');
@@ -597,7 +619,7 @@ document.addEventListener('DOMContentLoaded', () => {
             ? capitalize(batchBuilderState.customType.trim())
             : batchBuilderState.type;
         if (!batchName) return openAlertModal("Pick a batch type or enter a custom name.");
-        const categoryMap = { 'Spirit Batch': 'amber-glow', 'Juice Batch': 'juice-glow', 'Cream': 'magenta-glow', 'Mocktail': 'juice-glow' };
+        const categoryMap = { 'Spirit Batch': 'amber-glow', 'Juice Batch': 'juice-glow', 'Mocktail': 'juice-glow' };
         const mainCat = categoryMap[batchName] || 'amber-glow';
         let subSection = builderState.sections.find(s => s.name === batchName);
         if (!subSection) {
@@ -610,12 +632,8 @@ document.addEventListener('DOMContentLoaded', () => {
         const mainSection = builderState.sections.find(s => s.name === 'MAIN');
         if (mainSection) {
             const existing = mainSection.ingredients.find(i => i.name && i.name.toLowerCase() === batchName.toLowerCase());
-            if (existing) {
-                existing.amount = perDrink;
-                existing.cat = mainCat;
-            } else {
-                mainSection.ingredients.push({ amount: perDrink, name: batchName, cat: mainCat });
-            }
+            if (existing) { existing.amount = perDrink; existing.cat = mainCat; }
+            else { mainSection.ingredients.push({ amount: perDrink, name: batchName, cat: mainCat }); }
         }
         closeBatchBuilder();
         renderBuilder();
@@ -625,7 +643,7 @@ document.addEventListener('DOMContentLoaded', () => {
         const container = document.getElementById('batch-form-container');
         if (!container) return;
         if (!batchBuilderState) { container.innerHTML = ''; return; }
-        const types = ['Spirit Batch', 'Juice Batch', 'Cream', 'Mocktail', 'Custom'];
+        const types = ['Spirit Batch', 'Juice Batch', 'Mocktail', 'Custom'];
         container.innerHTML = `
             <div class="batch-form">
                 <h4 class="batch-form-title">NEW BATCH</h4>
@@ -638,8 +656,10 @@ document.addEventListener('DOMContentLoaded', () => {
                 <button id="batch-add-ing-btn" class="builder-add-ing">＋ INGREDIENT</button>
                 <div class="batch-per-drink-row">
                     <span class="batch-per-drink-label">Per drink:</span>
-                    <input type="number" id="batch-per-drink-input" class="batch-per-drink-input" value="${batchBuilderState.perDrink}" placeholder="50">
-                    <span class="batch-per-drink-suffix">ml of this batch</span>
+                    <button class="batch-stepper-btn" id="batch-per-drink-minus">−5</button>
+                    <input type="number" id="batch-per-drink-input" class="batch-per-drink-input" value="${batchBuilderState.perDrink}">
+                    <button class="batch-stepper-btn" id="batch-per-drink-plus">+5</button>
+                    <span class="batch-per-drink-suffix">ml</span>
                 </div>
                 <div id="batch-yield-display" class="batch-yield-display"></div>
                 <div class="batch-form-actions">
@@ -652,31 +672,41 @@ document.addEventListener('DOMContentLoaded', () => {
             pill.addEventListener('click', () => {
                 triggerHaptic('light');
                 batchBuilderState.type = pill.getAttribute('data-type');
+                if (batchBuilderState.type === 'Mocktail') {
+                    batchBuilderState.ingredients.forEach(ing => {
+                        if (ing.cat === 'amber-glow') ing.cat = 'juice-glow';
+                    });
+                }
                 renderBatchForm();
             });
         });
         const customInput = container.querySelector('.batch-custom-input');
-        if (customInput) {
-            customInput.addEventListener('input', e => { batchBuilderState.customType = e.target.value; });
-        }
+        if (customInput) customInput.addEventListener('input', e => { batchBuilderState.customType = e.target.value; });
         renderBatchIngredients();
         document.getElementById('batch-add-ing-btn').addEventListener('click', () => {
             triggerHaptic('light');
-            batchBuilderState.ingredients.push({ amount: 0, name: '', cat: 'amber-glow' });
+            const defaultCat = batchBuilderState.type === 'Mocktail' ? 'juice-glow' : 'amber-glow';
+            batchBuilderState.ingredients.push({ amount: 0, name: '', cat: defaultCat });
             renderBatchIngredients();
         });
         document.getElementById('batch-per-drink-input').addEventListener('input', e => {
             batchBuilderState.perDrink = parseFloat(e.target.value) || 0;
             updateBatchYieldDisplay();
         });
-        document.getElementById('batch-cancel-btn').addEventListener('click', () => {
+        document.getElementById('batch-per-drink-minus').addEventListener('click', () => {
             triggerHaptic('light');
-            closeBatchBuilder();
+            batchBuilderState.perDrink = Math.max(0, (batchBuilderState.perDrink || 0) - 5);
+            document.getElementById('batch-per-drink-input').value = batchBuilderState.perDrink;
+            updateBatchYieldDisplay();
         });
-        document.getElementById('batch-create-btn').addEventListener('click', () => {
-            triggerHaptic('heavy');
-            confirmBatchBuilder();
+        document.getElementById('batch-per-drink-plus').addEventListener('click', () => {
+            triggerHaptic('light');
+            batchBuilderState.perDrink = (batchBuilderState.perDrink || 0) + 5;
+            document.getElementById('batch-per-drink-input').value = batchBuilderState.perDrink;
+            updateBatchYieldDisplay();
         });
+        document.getElementById('batch-cancel-btn').addEventListener('click', () => { triggerHaptic('light'); closeBatchBuilder(); });
+        document.getElementById('batch-create-btn').addEventListener('click', () => { triggerHaptic('heavy'); confirmBatchBuilder(); });
         updateBatchYieldDisplay();
     }
 
@@ -702,9 +732,12 @@ document.addEventListener('DOMContentLoaded', () => {
             });
             row.querySelector('.builder-row-cat').addEventListener('click', () => {
                 triggerHaptic('light');
-                const cats = ['amber-glow', 'neon-cyan', 'juice-glow', 'magenta-glow'];
+                const cats = batchBuilderState.type === 'Mocktail'
+                    ? ['neon-cyan', 'juice-glow', 'magenta-glow']
+                    : ['amber-glow', 'neon-cyan', 'juice-glow', 'magenta-glow'];
                 const current = batchBuilderState.ingredients[idx].cat;
-                const next = cats[(cats.indexOf(current) + 1) % cats.length];
+                let curIdx = cats.indexOf(current);
+                const next = cats[(curIdx + 1) % cats.length];
                 batchBuilderState.ingredients[idx].cat = next;
                 const btn = row.querySelector('.builder-row-cat');
                 btn.className = `builder-row-cat ${next}`;
@@ -714,7 +747,8 @@ document.addEventListener('DOMContentLoaded', () => {
                 triggerHaptic('light');
                 batchBuilderState.ingredients.splice(idx, 1);
                 if (batchBuilderState.ingredients.length === 0) {
-                    batchBuilderState.ingredients.push({ amount: 0, name: '', cat: 'amber-glow' });
+                    const def = batchBuilderState.type === 'Mocktail' ? 'juice-glow' : 'amber-glow';
+                    batchBuilderState.ingredients.push({ amount: 0, name: '', cat: def });
                 }
                 renderBatchIngredients();
                 updateBatchYieldDisplay();
@@ -748,10 +782,60 @@ document.addEventListener('DOMContentLoaded', () => {
 
     renderBuilder();
 
-    // Kill the legacy LOCKED toggle — Spec Builder + EDIT/DEL now always visible
+    // Kill the legacy LOCKED toggle
     const legacyLockBtn = document.getElementById('edit-toggle');
     if (legacyLockBtn) legacyLockBtn.remove();
 
+    // Spec Builder: collapsible new/edit flow
+    function expandSpecBuilder() {
+        document.getElementById('new-spec-btn')?.classList.add('hidden');
+        document.getElementById('builder-content')?.classList.remove('hidden');
+    }
+    function collapseSpecBuilder() {
+        document.getElementById('new-spec-btn')?.classList.remove('hidden');
+        document.getElementById('builder-content')?.classList.add('hidden');
+    }
+    window.expandSpecBuilder = expandSpecBuilder;
+    window.collapseSpecBuilder = collapseSpecBuilder;
+    document.getElementById('new-spec-btn')?.addEventListener('click', () => {
+        triggerHaptic('light');
+        expandSpecBuilder();
+    });
+    document.getElementById('cancel-spec-btn')?.addEventListener('click', () => {
+        triggerHaptic('light');
+        resetBuilder();
+    });
+
+    // Inject long-press action sheet modal
+    if (!document.getElementById('action-sheet-modal')) {
+        document.body.insertAdjacentHTML('beforeend', `
+            <div id="action-sheet-modal" class="modal-overlay hidden">
+                <div class="action-sheet">
+                    <div class="action-sheet-title"></div>
+                    <button class="action-sheet-btn" data-action="edit">EDIT SPEC</button>
+                    <button class="action-sheet-btn action-sheet-danger" data-action="delete">DELETE</button>
+                    <button class="action-sheet-btn action-sheet-cancel" data-action="cancel">CANCEL</button>
+                </div>
+            </div>
+        `);
+        const sheet = document.getElementById('action-sheet-modal');
+        sheet.addEventListener('click', (e) => {
+            if (e.target === sheet) { sheet.classList.add('hidden'); return; }
+            const action = e.target.getAttribute('data-action');
+            if (!action) return;
+            const cocktailName = sheet.dataset.cocktailName;
+            sheet.classList.add('hidden');
+            if (action === 'edit' && cocktailName) editSpec(cocktailName);
+            else if (action === 'delete' && cocktailName) deleteSpec(cocktailName);
+        });
+    }
+    window.openActionSheet = (cocktailName) => {
+        const sheet = document.getElementById('action-sheet-modal');
+        if (!sheet) return;
+        sheet.dataset.cocktailName = cocktailName;
+        sheet.querySelector('.action-sheet-title').innerText = cocktailName;
+        sheet.classList.remove('hidden');
+    };
     // --- EDIT & DELETE ---
     window.editSpec = (name) => {
         triggerHaptic('heavy');
@@ -769,6 +853,7 @@ document.addEventListener('DOMContentLoaded', () => {
         builderState.sections.sort((a, b) => (a.name === 'MAIN' ? -1 : (b.name === 'MAIN' ? 1 : 0)));
         document.getElementById('builder-name').value = name;
         renderBuilder();
+        if (typeof expandSpecBuilder === 'function') expandSpecBuilder();
         document.getElementById('scroll-area').scrollTop = 0;
     };
 
