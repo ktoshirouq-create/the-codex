@@ -97,7 +97,16 @@ body { background-color: var(--bg-oled); color: var(--text-main); display: flex;
 .vault-item { border-bottom: 1px solid #222; padding: 10px 0; cursor: pointer; }
 .vault-header { display: flex; justify-content: space-between; align-items: center; padding: 10px 0; }
 .vault-details { max-height: 0; overflow: hidden; opacity: 0; transition: all 0.3s ease; }
-.vault-item.expanded .vault-details { max-height: 1000px; opacity: 1; padding: 15px 10px; background: rgba(255,255,255,0.02); border-left: 2px solid var(--nodee-gold); }
+.vault-item.expanded .vault-details { max-height: 4000px; opacity: 1; padding: 15px 10px; background: rgba(255,255,255,0.02); border-left: 2px solid var(--nodee-gold); }
+
+.vault-subsection { margin-top: 22px; }
+.vault-subsection:first-child { margin-top: 4px; }
+.vault-subsection-title { font-size: 0.7rem; font-weight: 900; letter-spacing: 2px; color: var(--nodee-gold); text-transform: uppercase; padding-bottom: 8px; margin-bottom: 8px; border-bottom: 1px solid rgba(200, 169, 126, 0.2); display: flex; justify-content: space-between; align-items: baseline; }
+.vault-yield { font-size: 0.6rem; font-weight: 700; color: var(--text-muted); letter-spacing: 1px; }
+.vault-total { display: flex; justify-content: space-between; align-items: center; margin-top: 20px; padding-top: 14px; border-top: 1px solid rgba(200, 169, 126, 0.3); }
+.vault-total .ing-amount { font-size: 1.4rem; color: var(--text-main) !important; }
+.service-multiplier { margin-bottom: 18px; }
+.view-toggle { margin-bottom: 18px; }
 
 .result-row { display: flex; flex-direction: column; padding: 12px 0; border-bottom: 1px solid #111; }
 .ing-name { font-size: 0.9rem; font-weight: 700; color: var(--text-muted); margin-bottom: 4px; }
@@ -108,9 +117,10 @@ body { background-color: var(--bg-oled); color: var(--text-main); display: flex;
 .juice-glow .ing-amount { color: var(--juice-glow); }
 
 /* Wash & Mod Pills */
-.wash-pill, .mod-pill { flex: 1; background: transparent; border: none; color: var(--text-muted); padding: 12px 0; border-radius: 10px; font-size: 0.85rem; font-weight: 800; letter-spacing: 1px; text-align: center; transition: color 0.25s ease; cursor: pointer; position: relative; z-index: 2; }
-.wash-pill.active, .mod-pill.active { color: var(--bg-oled); }
-.wash-pill:active, .mod-pill:active { transform: scale(0.96); transition: transform 0.1s ease; }
+.wash-pill, .mod-pill, .view-pill { flex: 1; background: transparent; border: none; color: var(--text-muted); padding: 12px 0; border-radius: 10px; font-size: 0.85rem; font-weight: 800; letter-spacing: 1px; text-align: center; transition: color 0.25s ease; cursor: pointer; position: relative; z-index: 2; }
+.wash-pill.active, .mod-pill.active, .view-pill.active { color: var(--bg-oled); }
+.wash-pill:active, .mod-pill:active, .view-pill:active { transform: scale(0.96); transition: transform 0.1s ease; }
+.view-pill { font-size: 0.7rem; padding: 11px 0; letter-spacing: 1.5px; font-weight: 900; }
 /* Quick Pills */
 .quick-pills { gap: 10px; }
 .quick-pill-btn { flex: 1; border: 1px solid rgba(255,255,255,0.1); background: rgba(255,255,255,0.04); color: var(--text-muted); padding: 10px 0; border-radius: 10px; font-size: 0.8rem; font-weight: 700; cursor: pointer; }
