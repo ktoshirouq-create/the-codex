@@ -385,13 +385,15 @@ document.addEventListener('DOMContentLoaded', () => {
                 triggerHaptic('light');
                 vItem.classList.toggle('expanded');
             });
-            vItem.addEventListener('pointercancel', () => {
+           vItem.addEventListener('pointercancel', () => {
                 if (pressTimer) { clearTimeout(pressTimer); pressTimer = null; }
             });
             list.appendChild(vItem);
         });
-
-            }
+        // Auto-seed the Shelf with any new ingredients pulled in this vault load
+        if (typeof autoSeedShelf === 'function') autoSeedShelf();
+        if (typeof renderShelf === 'function') renderShelf();
+    }
 
     window.updateRound = (cocktailId, change) => {
         triggerHaptic('light');
@@ -781,6 +783,198 @@ document.addEventListener('DOMContentLoaded', () => {
     }
 
     renderBuilder();
+
+    // --- THE SHELF ---
+    const SHELF_KEY = 'codex_shelf_v1';
+    let shelfData = {};
+    let shelfAddState = null;
+    const shelfCatLabels = { 'amber-glow': 'SPIRIT', 'neon-cyan': 'LIQUEUR', 'juice-glow': 'JUICE', 'magenta-glow': 'SYRUP' };
+    const shelfDefaultAbvs = { 'amber-glow': 40, 'neon-cyan': 20, 'juice-glow': 0, 'magenta-glow': 0 };
+
+    function loadShelf() {
+        try {
+            const raw = localStorage.getItem(SHELF_KEY);
+            shelfData = raw ? JSON.parse(raw) : {};
+        } catch { shelfData = {}; }
+    }
+
+    function saveShelf() {
+        try { localStorage.setItem(SHELF_KEY, JSON.stringify(shelfData)); } catch {}
+    }
+
+    window.autoSeedShelf = function() {
+        const isBatchRef = (name) => {
+            const low = (name || '').toLowerCase();
+            return /^(spirit|juice|cream).*batch$/.test(low) || /^mocktail$/.test(low);
+        };
+        let changed = false;
+        Object.keys(recipeVault || {}).forEach(cocktailName => {
+            (recipeVault[cocktailName] || []).forEach(ing => {
+                if (!ing.name || isBatchRef(ing.name)) return;
+                if (!shelfData[ing.name]) {
+                    shelfData[ing.name] = {
+                        category: ing.color || 'amber-glow',
+                        abv: shelfDefaultAbvs[ing.color] ?? 0,
+                        inStock: true
+                    };
+                    changed = true;
+                }
+            });
+        });
+        if (changed) saveShelf();
+    };
+
+    function injectShelfCard() {
+        if (document.getElementById('shelf-card')) return;
+        const codexModule = document.getElementById('codex-module');
+        if (!codexModule) return;
+        codexModule.insertAdjacentHTML('beforeend', `
+            <div id="shelf-card" class="card glass-panel">
+                <h2 class="card-title text-gold">THE SHELF</h2>
+                <button id="shelf-add-btn" class="btn-secondary" style="width: 100%; margin-top: 12px;">＋ ADD INGREDIENT</button>
+                <div id="shelf-add-form" class="hidden"></div>
+                <div id="shelf-list"></div>
+            </div>
+        `);
+        document.getElementById('shelf-add-btn').addEventListener('click', () => {
+            triggerHaptic('light');
+            toggleShelfAddForm();
+        });
+    }
+
+    function toggleShelfAddForm() {
+        const form = document.getElementById('shelf-add-form');
+        if (!form) return;
+        if (shelfAddState) {
+            shelfAddState = null;
+            form.classList.add('hidden');
+            form.innerHTML = '';
+            return;
+        }
+        shelfAddState = { name: '', cat: 'amber-glow', abv: 40 };
+        form.classList.remove('hidden');
+        form.innerHTML = `
+            <div class="shelf-add-form-inner">
+                <input type="text" class="shelf-add-name premium-text-input" placeholder="Ingredient name">
+                <div class="shelf-add-controls">
+                    <button class="shelf-add-cat amber-glow">SPIRIT</button>
+                    <input type="number" class="shelf-add-abv" value="40" min="0" max="100">
+                    <span class="shelf-add-abv-suffix">%</span>
+                </div>
+                <div class="shelf-add-actions">
+                    <button class="shelf-add-cancel">CANCEL</button>
+                    <button class="shelf-add-save">SAVE</button>
+                </div>
+            </div>
+        `;
+        form.querySelector('.shelf-add-name').addEventListener('input', e => { shelfAddState.name = e.target.value; });
+        form.querySelector('.shelf-add-cat').addEventListener('click', () => {
+            triggerHaptic('light');
+            const cats = ['amber-glow', 'neon-cyan', 'juice-glow', 'magenta-glow'];
+            shelfAddState.cat = cats[(cats.indexOf(shelfAddState.cat) + 1) % cats.length];
+            const btn = form.querySelector('.shelf-add-cat');
+            btn.className = `shelf-add-cat ${shelfAddState.cat}`;
+            btn.innerText = shelfCatLabels[shelfAddState.cat];
+            shelfAddState.abv = shelfDefaultAbvs[shelfAddState.cat];
+            form.querySelector('.shelf-add-abv').value = shelfAddState.abv;
+        });
+        form.querySelector('.shelf-add-abv').addEventListener('input', e => { shelfAddState.abv = parseFloat(e.target.value) || 0; });
+        form.querySelector('.shelf-add-cancel').addEventListener('click', () => {
+            triggerHaptic('light');
+            toggleShelfAddForm();
+        });
+        form.querySelector('.shelf-add-save').addEventListener('click', () => {
+            triggerHaptic('heavy');
+            const name = capitalize(shelfAddState.name.trim());
+            if (!name) return openAlertModal("Ingredient name required.");
+            if (shelfData[name]) return openAlertModal(`"${name}" is already on the shelf.`);
+            shelfData[name] = { category: shelfAddState.cat, abv: shelfAddState.abv, inStock: true };
+            saveShelf();
+            toggleShelfAddForm();
+            renderShelf();
+        });
+    }
+
+    window.renderShelf = function() {
+        const list = document.getElementById('shelf-list');
+        if (!list) return;
+        list.innerHTML = '';
+        const catOrder = { 'amber-glow': 1, 'neon-cyan': 2, 'juice-glow': 3, 'magenta-glow': 4 };
+        const entries = Object.entries(shelfData).sort((a, b) => {
+            const ordA = catOrder[a[1].category] || 5;
+            const ordB = catOrder[b[1].category] || 5;
+            if (ordA !== ordB) return ordA - ordB;
+            return a[0].localeCompare(b[0]);
+        });
+        if (entries.length === 0) {
+            list.innerHTML = '<p class="text-muted text-sm" style="margin-top: 16px; padding: 8px;">No ingredients yet. Add one above, or save a cocktail to auto-seed.</p>';
+            return;
+        }
+        entries.forEach(([name, data]) => {
+            const row = document.createElement('div');
+            row.className = `shelf-row ${data.category}${data.inStock ? '' : ' shelf-row-oos'}`;
+            row.innerHTML = `
+                <button class="shelf-stock-btn ${data.inStock ? 'in-stock' : 'oos'}">${data.inStock ? '●' : '○'}</button>
+                <span class="shelf-ing-name">${name}</span>
+                <button class="shelf-cat-btn ${data.category}">${shelfCatLabels[data.category] || 'SPIRIT'}</button>
+                <input type="number" class="shelf-abv-input" value="${data.abv || 0}" min="0" max="100">
+                <span class="shelf-abv-suffix">%</span>
+            `;
+            row.querySelector('.shelf-stock-btn').addEventListener('click', (e) => {
+                e.stopPropagation();
+                triggerHaptic('light');
+                shelfData[name].inStock = !shelfData[name].inStock;
+                saveShelf();
+                renderShelf();
+            });
+            row.querySelector('.shelf-abv-input').addEventListener('change', e => {
+                shelfData[name].abv = parseFloat(e.target.value) || 0;
+                saveShelf();
+            });
+            row.querySelector('.shelf-cat-btn').addEventListener('click', (e) => {
+                e.stopPropagation();
+                triggerHaptic('light');
+                const cats = ['amber-glow', 'neon-cyan', 'juice-glow', 'magenta-glow'];
+                const current = shelfData[name].category;
+                const next = cats[(cats.indexOf(current) + 1) % cats.length];
+                shelfData[name].category = next;
+                saveShelf();
+                renderShelf();
+            });
+            let pressTimer = null;
+            let pressStart = null;
+            row.addEventListener('pointerdown', (e) => {
+                if (e.target.closest('button') || e.target.closest('input')) return;
+                pressStart = { x: e.clientX, y: e.clientY };
+                pressTimer = setTimeout(() => {
+                    pressTimer = null;
+                    triggerHaptic('medium');
+                    openConfirmModal(`Remove "${name}" from the shelf?`, () => {
+                        delete shelfData[name];
+                        saveShelf();
+                        renderShelf();
+                    });
+                }, 500);
+            });
+            row.addEventListener('pointermove', (e) => {
+                if (!pressTimer || !pressStart) return;
+                const dx = Math.abs(e.clientX - pressStart.x);
+                const dy = Math.abs(e.clientY - pressStart.y);
+                if (dx > 10 || dy > 10) { clearTimeout(pressTimer); pressTimer = null; }
+            });
+            row.addEventListener('pointerup', () => {
+                if (pressTimer) { clearTimeout(pressTimer); pressTimer = null; }
+            });
+            row.addEventListener('pointercancel', () => {
+                if (pressTimer) { clearTimeout(pressTimer); pressTimer = null; }
+            });
+            list.appendChild(row);
+        });
+    };
+
+    loadShelf();
+    injectShelfCard();
+    renderShelf();
 
     // Kill the legacy LOCKED toggle
     const legacyLockBtn = document.getElementById('edit-toggle');
