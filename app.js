@@ -674,7 +674,7 @@ document.addEventListener('DOMContentLoaded', () => {
                 batchBuilderState.type = pill.getAttribute('data-type');
                 if (batchBuilderState.type === 'Mocktail') {
                     batchBuilderState.ingredients.forEach(ing => {
-                        if (ing.cat === 'amber-glow') ing.cat = 'juice-glow';
+                        if (ing.cat === 'amber-glow' || ing.cat === 'neon-cyan') ing.cat = 'juice-glow';
                     });
                 }
                 renderBatchForm();
@@ -733,7 +733,7 @@ document.addEventListener('DOMContentLoaded', () => {
             row.querySelector('.builder-row-cat').addEventListener('click', () => {
                 triggerHaptic('light');
                 const cats = batchBuilderState.type === 'Mocktail'
-                    ? ['neon-cyan', 'juice-glow', 'magenta-glow']
+                    ? ['juice-glow', 'magenta-glow']
                     : ['amber-glow', 'neon-cyan', 'juice-glow', 'magenta-glow'];
                 const current = batchBuilderState.ingredients[idx].cat;
                 let curIdx = cats.indexOf(current);
