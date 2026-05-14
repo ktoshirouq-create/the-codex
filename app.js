@@ -241,105 +241,49 @@ document.addEventListener('DOMContentLoaded', () => {
         return n.toFixed(1).replace(/\.0$/, '');
     }
 
-    function expandPerDrink(mainName) {
-        const main = recipeVault[mainName] || [];
-        const expanded = [];
-        main.forEach(ing => {
-            const subBatchName = `${mainName} — ${ing.name}`;
-            const subBatch = recipeVault[subBatchName];
-            if (subBatch && subBatch.length > 0) {
-                const batchTotal = subBatch.reduce((sum, sub) => sum + (sub.amount || 0), 0);
-                const fraction = batchTotal > 0 ? (ing.amount / batchTotal) : 0;
-                subBatch.forEach(sub => {
-                    expanded.push({ name: sub.name, amount: sub.amount * fraction, color: sub.color, fromBatch: ing.name });
-                });
-            } else {
-                expanded.push({ name: ing.name, amount: ing.amount, color: ing.color });
-            }
-        });
-        return expanded;
-    }
-
-    function renderVaultContent(container, cocktail, subBatches, view, round) {
+    function renderVaultContent(container, cocktail, subBatches, round) {
         container.innerHTML = '';
-        const hasSubBatches = subBatches.length > 0;
+        const mainIngs = recipeVault[cocktail] || [];
 
-        if (view === 'batched' || !hasSubBatches) {
-            const mainIngs = recipeVault[cocktail] || [];
+        if (mainIngs.length > 0) {
+            const mainSection = document.createElement('div');
+            mainSection.className = 'vault-main-section';
+            let html = '';
+            mainIngs.forEach(ing => {
+                const amt = ing.amount * round;
+                html += `<div class="result-row ${ing.color}"><span class="ing-name">${ing.name}</span><span class="ing-amount">${formatAmount(amt)}ml</span></div>`;
+            });
+            mainSection.innerHTML = html;
+            container.appendChild(mainSection);
+        }
+
+        if (subBatches.length > 0) {
             if (mainIngs.length > 0) {
-                const mainSection = document.createElement('div');
-                mainSection.className = 'vault-subsection';
-                let html = hasSubBatches ? `<h4 class="vault-subsection-title">MAIN</h4>` : '';
-                let totalMain = 0;
-                mainIngs.forEach(ing => {
-                    const amt = ing.amount * round;
-                    totalMain += amt;
-                    html += `<div class="result-row ${ing.color}"><span class="ing-name">${ing.name}</span><span class="ing-amount">${formatAmount(amt)}ml</span></div>`;
-                });
-                mainSection.innerHTML = html;
-                container.appendChild(mainSection);
-
-                if (!hasSubBatches) {
-                    const totalRow = document.createElement('div');
-                    totalRow.className = 'vault-total';
-                    totalRow.innerHTML = `<span class="ing-name text-gold fw-bold">TOTAL YIELD${round > 1 ? ` (× ${round})` : ''}</span><span class="ing-amount text-main">${formatAmount(totalMain)}ml</span>`;
-                    container.appendChild(totalRow);
-                }
+                const divider = document.createElement('div');
+                divider.className = 'vault-divider';
+                container.appendChild(divider);
             }
 
             subBatches.forEach(sbName => {
                 const sbIngs = recipeVault[sbName] || [];
                 if (sbIngs.length === 0) return;
                 const label = sbName.replace(cocktail + ' — ', '');
-                const yieldTotal = sbIngs.reduce((s, i) => s + (i.amount || 0), 0) * round;
+                const batchYield = sbIngs.reduce((s, i) => s + (i.amount || 0), 0);
+                const mainRef = mainIngs.find(i => i.name === label);
+                let yieldLabel = `${formatAmount(batchYield)}ml`;
+                if (mainRef && mainRef.amount > 0) {
+                    const drinks = Math.floor(batchYield / mainRef.amount);
+                    yieldLabel += ` · ${drinks} drinks`;
+                }
                 const section = document.createElement('div');
-                section.className = 'vault-subsection';
-                let html = `<h4 class="vault-subsection-title">${label.toUpperCase()}<span class="vault-yield">${formatAmount(yieldTotal)}ml YIELD</span></h4>`;
+                section.className = 'vault-subbatch';
+                let html = `<h4 class="vault-subbatch-title">${label.toUpperCase()}<span class="vault-yield-label">${yieldLabel}</span></h4>`;
                 sbIngs.forEach(ing => {
-                    const amt = ing.amount * round;
-                    html += `<div class="result-row ${ing.color}"><span class="ing-name">${ing.name}</span><span class="ing-amount">${formatAmount(amt)}ml</span></div>`;
+                    html += `<div class="subbatch-row ${ing.color}"><span class="ing-name">${ing.name}</span><span class="ing-amount">${formatAmount(ing.amount)}ml</span></div>`;
                 });
                 section.innerHTML = html;
                 container.appendChild(section);
             });
-        } else {
-            const expanded = expandPerDrink(cocktail);
-            const direct = expanded.filter(e => !e.fromBatch);
-            const fromBatches = {};
-            expanded.filter(e => e.fromBatch).forEach(e => {
-                if (!fromBatches[e.fromBatch]) fromBatches[e.fromBatch] = [];
-                fromBatches[e.fromBatch].push(e);
-            });
-
-            Object.entries(fromBatches).forEach(([batchName, items]) => {
-                const section = document.createElement('div');
-                section.className = 'vault-subsection';
-                let html = `<h4 class="vault-subsection-title">FROM ${batchName.toUpperCase()}</h4>`;
-                items.forEach(ing => {
-                    const amt = ing.amount * round;
-                    html += `<div class="result-row ${ing.color}"><span class="ing-name">${ing.name}</span><span class="ing-amount">${formatAmount(amt)}ml</span></div>`;
-                });
-                section.innerHTML = html;
-                container.appendChild(section);
-            });
-
-            if (direct.length > 0) {
-                const section = document.createElement('div');
-                section.className = 'vault-subsection';
-                let html = `<h4 class="vault-subsection-title">DIRECT</h4>`;
-                direct.forEach(ing => {
-                    const amt = ing.amount * round;
-                    html += `<div class="result-row ${ing.color}"><span class="ing-name">${ing.name}</span><span class="ing-amount">${formatAmount(amt)}ml</span></div>`;
-                });
-                section.innerHTML = html;
-                container.appendChild(section);
-            }
-
-            const totalMl = expanded.reduce((sum, ing) => sum + (ing.amount * round), 0);
-            const totalRow = document.createElement('div');
-            totalRow.className = 'vault-total';
-            totalRow.innerHTML = `<span class="ing-name text-gold fw-bold">TOTAL${round > 1 ? ` (× ${round})` : ' PER DRINK'}</span><span class="ing-amount text-main">${formatAmount(totalMl)}ml</span>`;
-            container.appendChild(totalRow);
         }
     }
 
@@ -362,7 +306,6 @@ document.addEventListener('DOMContentLoaded', () => {
 
             const id = cocktail.replace(/\s+/g, '-').replace(/[^a-zA-Z0-9-]/g, '');
             const escapedName = cocktail.replace(/'/g, "\\'");
-            const hasSubBatches = subBatches.length > 0;
 
             const vItem = document.createElement('div');
             vItem.className = 'vault-item';
@@ -382,17 +325,6 @@ document.addEventListener('DOMContentLoaded', () => {
             details.className = 'vault-details';
             details.id = `details-${id}`;
 
-            if (hasSubBatches) {
-                const toggle = document.createElement('div');
-                toggle.className = 'pill-group view-toggle';
-                toggle.onclick = (e) => e.stopPropagation();
-                toggle.innerHTML = `
-                    <button class="view-pill active" data-view="batched">AS BATCHED</button>
-                    <button class="view-pill" data-view="perdrink">PER DRINK</button>
-                `;
-                details.appendChild(toggle);
-            }
-
             const mult = document.createElement('div');
             mult.className = 'service-multiplier';
             mult.onclick = (e) => e.stopPropagation();
@@ -411,10 +343,9 @@ document.addEventListener('DOMContentLoaded', () => {
             details.appendChild(content);
             vItem.appendChild(details);
 
-            renderVaultContent(content, cocktail, subBatches, 'batched', 1);
+            renderVaultContent(content, cocktail, subBatches, 1);
 
             const getRound = () => parseInt(mult.querySelector('.stepper-value').innerText) || 1;
-            const getView = () => details.querySelector('.view-pill.active')?.getAttribute('data-view') || 'batched';
 
             mult.querySelector('[data-action="round-minus"]').addEventListener('click', (e) => {
                 e.stopPropagation();
@@ -423,7 +354,7 @@ document.addEventListener('DOMContentLoaded', () => {
                 const current = getRound();
                 if (current > 1) {
                     valEl.innerText = current - 1;
-                    renderVaultContent(content, cocktail, subBatches, getView(), current - 1);
+                    renderVaultContent(content, cocktail, subBatches, current - 1);
                 }
             });
             mult.querySelector('[data-action="round-plus"]').addEventListener('click', (e) => {
@@ -432,21 +363,8 @@ document.addEventListener('DOMContentLoaded', () => {
                 const valEl = mult.querySelector('.stepper-value');
                 const next = getRound() + 1;
                 valEl.innerText = next;
-                renderVaultContent(content, cocktail, subBatches, getView(), next);
+                renderVaultContent(content, cocktail, subBatches, next);
             });
-
-            if (hasSubBatches) {
-                const pills = details.querySelectorAll('.view-pill');
-                pills.forEach(pill => {
-                    pill.addEventListener('click', (e) => {
-                        e.stopPropagation();
-                        triggerHaptic('light');
-                        pills.forEach(p => p.classList.remove('active'));
-                        pill.classList.add('active');
-                        renderVaultContent(content, cocktail, subBatches, pill.getAttribute('data-view'), getRound());
-                    });
-                });
-            }
 
             vItem.addEventListener('click', () => { triggerHaptic('light'); vItem.classList.toggle('expanded'); });
             list.appendChild(vItem);
