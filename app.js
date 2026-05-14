@@ -886,32 +886,80 @@ document.addEventListener('DOMContentLoaded', () => {
 
             parsedStagingData = [];
             const lines = text.split('\n');
-            const regex = /^(\d+(?:\.\d+)?)\s*(?:ml|g|oz|dash|dashes)?\s+(.+)$/i;
-            const sectionRegex = /^_{1,}\s*(.+?)\s*_{1,}$/;
+            const lineRegex = /^(\d+(?:[.,]\d+)?)\s*(.+)$/;
+            const ratioRegex = /^\d+\s*:\s*\d+\s+(.+)$/;
+            const unitStrip = /^(?:ml|g|oz|cl|tbsp|tsp|dash(?:es)?|squeeze(?:s)?|pinch(?:es)?|drop(?:s)?|barspoon(?:s)?|bsp|cube(?:s)?|leaves|leaf|shot(?:s)?)\s+/i;
+            const underscoreRegex = /^_+\s*(.+?)\s*_+$/;
+            // Only EXPLICIT batch patterns count as section headers — everything else is prep/garnish/skip
+            const batchHeaderRegex = /^(spirit\s*batch|juice\s*batch|cream(?:\s+batch)?|mocktail|.+\s+batch)\s*:?\s*$/i;
             const syrupKeys = ['syrup', 'sugar', 'agave', 'honey', 'gomme', 'orgeat', 'falernum', 'grenadine', 'cordial'];
-            const liqueurKeys = ['liqueur', 'licor', 'amaro', 'campari', 'aperol', 'vermouth', 'cointreau', 'triple sec', 'chartreuse', 'bénédictine', 'benedictine', 'maraschino', 'amaretto', 'kahlua', 'baileys', 'crème de', 'creme de', 'sambuca', 'absinthe', 'pastis', 'sherry', 'port', 'madeira', 'lillet', 'suze', 'fernet', 'jägermeister', 'jagermeister', 'drambuie', 'galliano', 'frangelico', 'midori', 'curaçao', 'curacao', 'st-germain', 'st. germain', 'bitters', 'wine', 'champagne', 'prosecco', 'cava'];
-            const juiceKeys = ['juice', 'lemon', 'lime', 'orange', 'grapefruit', 'pineapple', 'cranberry', 'apple', 'tomato', 'water', 'soda', 'tonic', 'cola', 'ginger beer', 'coconut', 'milk', 'cream', 'egg', 'puree'];
-            
+            const liqueurKeys = ['liqueur', 'licor', 'amaro', 'campari', 'aperol', 'vermouth', 'cointreau', 'triple sec', 'chartreuse', 'bénédictine', 'benedictine', 'maraschino', 'amaretto', 'disaronno', 'dissarono', 'kahlua', 'tia maria', 'baileys', 'crème de', 'creme de', 'sambuca', 'absinthe', 'pastis', 'sherry', 'port', 'madeira', 'lillet', 'suze', 'fernet', 'jägermeister', 'jagermeister', 'drambuie', 'galliano', 'frangelico', 'midori', 'curaçao', 'curacao', 'st-germain', 'st. germain', 'bitters', 'angostura', 'peychaud', 'wine', 'champagne', 'prosecco', 'cava'];
+            const juiceKeys = ['juice', 'puree', 'lemon', 'lime', 'orange', 'grapefruit', 'pineapple', 'cranberry', 'apple', 'tomato', 'water', 'soda', 'tonic', 'cola', 'ginger beer', 'coconut', 'milk', 'cream', 'egg', 'yuzu', 'passion', 'mango', 'raspberry', 'strawberry', 'blackberry', 'blueberry', 'watermelon', 'cucumber', 'kiwi', 'lychee', 'guava', 'peach', 'pear', 'rhubarb', 'beetroot', 'carrot', 'fig'];
+
+            const detectBatchType = (raw) => {
+                const low = raw.toLowerCase();
+                if (/spirit\s*batch/.test(low)) return 'Spirit Batch';
+                if (/juice\s*batch/.test(low)) return 'Juice Batch';
+                if (/mocktail/.test(low)) return 'Mocktail';
+                if (/cream/.test(low)) return 'Cream';
+                return capitalize(raw.replace(/:$/, '').trim());
+            };
+
+            const categorize = (name) => {
+                const low = name.toLowerCase();
+                if (/spirit\s*batch/.test(low)) return 'amber-glow';
+                if (/juice\s*batch/.test(low)) return 'juice-glow';
+                if (/mocktail/.test(low)) return 'juice-glow';
+                if (/cream.*batch/.test(low)) return 'magenta-glow';
+                if (syrupKeys.some(k => low.includes(k))) return 'magenta-glow';
+                if (liqueurKeys.some(k => low.includes(k))) return 'neon-cyan';
+                if (juiceKeys.some(k => low.includes(k))) return 'juice-glow';
+                return 'amber-glow';
+            };
+
             let currentSection = title;
             lines.forEach(line => {
                 const trimmed = line.trim();
                 if (!trimmed) return;
-                const sectionMatch = trimmed.match(sectionRegex);
-                if (sectionMatch) {
-                    currentSection = `${title} — ${capitalize(sectionMatch[1])}`;
+
+                // Underscore section: __Spirit Batch__
+                const underscoreMatch = trimmed.match(underscoreRegex);
+                if (underscoreMatch) {
+                    currentSection = `${title} — ${detectBatchType(underscoreMatch[1])}`;
                     return;
                 }
-                const match = trimmed.match(regex);
-                if (match) {
-                    const amt = parseFloat(match[1]);
-                    const name = capitalize(match[2].trim());
-                    const lowName = name.toLowerCase();
-                    let tag = 'amber-glow';
-                    if (syrupKeys.some(k => lowName.includes(k))) tag = 'magenta-glow';
-                    else if (liqueurKeys.some(k => lowName.includes(k))) tag = 'neon-cyan';
-                    else if (juiceKeys.some(k => lowName.includes(k))) tag = 'juice-glow';
-                    parsedStagingData.push({ cocktailName: currentSection, ingredientName: name, amount: amt, bottleSize: 0, categoryTag: tag });
+
+                // Explicit batch header (non-numbered line matching batch pattern)
+                if (!/^\d/.test(trimmed) && batchHeaderRegex.test(trimmed)) {
+                    currentSection = `${title} — ${detectBatchType(trimmed)}`;
+                    return;
                 }
+
+                // Ratio line: "1:1 X juice and Y juice" → split into placeholder ingredients (amount 0)
+                const ratioMatch = trimmed.match(ratioRegex);
+                if (ratioMatch) {
+                    const parts = ratioMatch[1].split(/\s+and\s+/i);
+                    parts.forEach(p => {
+                        const name = capitalize(p.trim());
+                        if (!name) return;
+                        parsedStagingData.push({ cocktailName: currentSection, ingredientName: name, amount: 0, bottleSize: 0, categoryTag: categorize(name) });
+                    });
+                    return;
+                }
+
+                // Ingredient line (starts with a number)
+                const ingMatch = trimmed.match(lineRegex);
+                if (ingMatch) {
+                    const amt = parseFloat(ingMatch[1].replace(',', '.'));
+                    const rest = ingMatch[2].replace(unitStrip, '').trim();
+                    if (!rest) return;
+                    const name = capitalize(rest);
+                    parsedStagingData.push({ cocktailName: currentSection, ingredientName: name, amount: amt, bottleSize: 0, categoryTag: categorize(name) });
+                    return;
+                }
+
+                // Everything else (prep, garnish, instructions, qualitative ingredients) is skipped
+                // — add those manually in staging review after parsing
             });
             renderStagingArea();
         });
