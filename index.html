@@ -71,118 +71,67 @@
 
         <section id="lab-module" class="module">
             <div class="card glass-panel">
-                <h2 class="card-title text-gold">ABV CALCULATOR</h2>
-                <button id="btn-abv-spec" class="premium-basic-input custom-select-btn w-100 mb-20 text-muted">Select Spec...</button>
-                <div id="abv-ing-container" class="hidden mb-20">
-                    <h3 class="zone-header">BASE INGREDIENTS (ABV %)</h3>
-                    <div id="abv-ing-list"></div>
-                    <div class="flex-row mt-20" style="align-items: center; justify-content: space-between; border-top: 1px solid #333; padding-top: 15px;">
-                        <label class="text-muted text-sm">Target Dilution</label>
-                        <div class="stepper-control mini-stepper" style="width: 120px;">
-                            <button id="abv-dil-minus" class="stepper-btn">−</button>
-                            <span id="abv-dil-val" class="stepper-value">20%</span>
-                            <button id="abv-dil-plus" class="stepper-btn">+</button>
-                        </div>
-                    </div>
-                    <button id="calc-abv-btn" class="btn-primary mt-20 cyan-btn">CALCULATE FINAL ABV</button>
-                    <div id="abv-results" class="output-container mt-20"></div>
-                </div>
-            </div>
-
-            <div class="card glass-panel">
-                <h2 class="card-title text-gold">FAT & PROTEIN WASHING</h2>
+                <h2 class="card-title text-gold">SYRUP & BRIX ENGINE</h2>
                 <div class="pill-group">
-                    <button class="wash-pill active" data-val="milk">MILK PUNCH</button>
-                    <button class="wash-pill" data-val="fat">FAT WASH</button>
+                    <button class="mod-pill active" data-val="build">BUILD SYRUP</button>
+                    <button class="mod-pill" data-val="fix">BRIX FIXER</button>
                 </div>
-                <div id="ui-milk-wash">
-                    <div class="input-group">
-                        <label class="text-muted text-sm mb-10" style="display:block">Total Punch Volume (ml)</label>
-                        <div class="massive-input"><input type="number" id="milk-punch-vol" placeholder="1000" value=""></div>
+
+                <div id="ui-brix-build">
+                    <div class="flex-row mb-20">
+                        <div class="half-width">
+                            <label class="text-muted text-sm" style="display:block; margin-bottom:8px;">Sweetener Base</label>
+                            <button id="btn-syrup-base" class="premium-basic-input custom-select-btn w-100" style="margin-bottom:0;">Dry Sugar (100 Bx)</button>
+                        </div>
+                        <div class="half-width">
+                            <label class="text-muted text-sm" style="display:block; margin-bottom:8px;">Target Profile</label>
+                            <button id="btn-syrup-target" class="premium-basic-input custom-select-btn w-100" style="margin-bottom:0;">1:1 Ratio (Weight)</button>
+                        </div>
                     </div>
+                    
+                    <div id="custom-brix-container" class="hidden mb-20" style="border-top:1px solid #333; padding-top:15px;">
+                        <label class="text-muted text-sm mb-10" style="display:block; text-align:center;">Custom Target Brix %</label>
+                        <div class="massive-input"><input type="number" id="custom-target-brix" placeholder="50" value=""></div>
+                    </div>
+
+                    <div class="input-group mt-20">
+                        <label class="text-muted text-sm mb-10" style="display:block; text-align:center;">Base Sweetener Weight (g)</label>
+                        <div class="massive-input"><input type="number" id="syrup-base-weight" placeholder="1000" value=""></div>
+                    </div>
+                    <button id="calc-build-btn" class="btn-primary mt-20">CALCULATE WATER</button>
                 </div>
-                <div id="ui-fat-wash" class="hidden">
-                    <button id="btn-fat-type" class="premium-basic-input custom-select-btn w-100 mb-20">Standard (Butter / Coconut Oil)</button>
-                    <div class="massive-input"><input type="number" id="fat-spirit-vol" placeholder="700" value=""></div>
+
+                <div id="ui-brix-fix" class="hidden">
+                    <div class="flex-row mb-20">
+                        <div class="half-width">
+                            <label class="text-muted text-sm mb-10" style="display:block; text-align:center;">Current Brix</label>
+                            <div class="massive-input"><input type="number" id="fix-current-brix" placeholder="65" value=""></div>
+                        </div>
+                        <div class="half-width">
+                            <label class="text-muted text-sm mb-10" style="display:block; text-align:center;">Target Brix</label>
+                            <div class="massive-input"><input type="number" id="fix-target-brix" placeholder="50" value=""></div>
+                        </div>
+                    </div>
+                    <div class="input-group" style="border-top:1px solid #333; padding-top:15px;">
+                        <label class="text-muted text-sm mb-10" style="display:block; text-align:center;">Current Syrup Weight (g)</label>
+                        <div class="massive-input"><input type="number" id="fix-current-weight" placeholder="1000" value=""></div>
+                    </div>
+                    <button id="calc-fix-btn" class="btn-primary burgundy-btn mt-20">CALCULATE FIX</button>
                 </div>
-                <button id="calc-wash-btn" class="btn-secondary mt-20">CALCULATE WASH</button>
-                <div id="wash-results" class="output-container mt-20"></div>
+
+                <div id="brix-results" class="output-container mt-20"></div>
             </div>
 
             <div class="card glass-panel">
-                <h2 class="card-title text-gold">LIQUID INTEL: ACID ADJUSTER</h2>
-                <div class="select-stack mb-20">
-                    <div class="select-field">
-                        <span class="select-label">BASE LIQUID</span>
-                        <button id="btn-acid-base" class="premium-basic-input custom-select-btn w-100">Orange Juice (~1%)</button>
-                    </div>
-                    <div class="select-field">
-                        <span class="select-label">TARGET ACIDITY</span>
-                        <button id="btn-acid-target" class="premium-basic-input custom-select-btn w-100">Lemon (6% Citric)</button>
-                    </div>
+                <h2 class="card-title text-gold">REFERENCE: FINAL BRIX</h2>
+                <div class="law-table">
+                    <div class="law-row" style="justify-content: space-between;"><span>1:1 Dry Sugar</span><span class="text-gold fw-bold">50.0 Bx</span></div>
+                    <div class="law-row" style="justify-content: space-between;"><span>1.5:1 Dry Sugar</span><span class="text-gold fw-bold">60.0 Bx</span></div>
+                    <div class="law-row" style="justify-content: space-between;"><span>1.85:1 Dry Sugar</span><span class="text-gold fw-bold">65.0 Bx</span></div>
+                    <div class="law-row" style="justify-content: space-between;"><span>2:1 Dry Sugar</span><span class="text-gold fw-bold">66.7 Bx</span></div>
+                    <div class="law-row" style="justify-content: space-between;"><span>3:1 Honey (~80Bx base)</span><span class="text-gold fw-bold">60.0 Bx</span></div>
+                    <div class="law-row" style="justify-content: space-between;"><span>2:1 Agave (~75Bx base)</span><span class="text-gold fw-bold">50.0 Bx</span></div>
                 </div>
-                <div class="massive-input"><input type="number" id="acid-vol" placeholder="1000" value=""></div>
-                <button id="calc-acid-btn" class="btn-secondary mt-20">ADJUST ACID</button>
-                <div id="acid-results" class="output-container mt-20"></div>
-            </div>
-            
-            <div class="card glass-panel">
-                <h2 class="card-title text-gold">MODIFIER ENGINE</h2>
-                <div class="input-group">
-                    <label class="text-muted text-sm mb-10" style="display:block">Strained Syrup Weight (g)</label>
-                    <div class="massive-input"><input type="number" id="mod-weight" placeholder="1000" value=""></div>
-                </div>
-                <div class="pill-group mt-20">
-                    <button class="mod-pill active" data-val="cordial">CORDIAL (ACID)</button>
-                    <button class="mod-pill" data-val="shrub">SHRUB (VINEGAR)</button>
-                </div>
-                <div id="shrub-guide" class="hidden">
-                    <h3 class="zone-header">VINEGAR PAIRING GUIDE</h3>
-                    <div class="vinegar-row">
-                        <span class="vinegar-emoji">🍎</span>
-                        <div class="vinegar-info">
-                            <span class="vinegar-name">APPLE CIDER</span>
-                            <span class="vinegar-desc">Dark, autumnal, orchard. Berries, apples, pears, beetroot, rhubarb.</span>
-                        </div>
-                    </div>
-                    <div class="vinegar-row">
-                        <span class="vinegar-emoji">🥂</span>
-                        <div class="vinegar-info">
-                            <span class="vinegar-name">WHITE WINE</span>
-                            <span class="vinegar-desc">Light, crisp, delicate. Melon, cucumber, white peach, herbs, elderflower.</span>
-                        </div>
-                    </div>
-                    <div class="vinegar-row">
-                        <span class="vinegar-emoji">🍚</span>
-                        <div class="vinegar-info">
-                            <span class="vinegar-name">RICE WINE</span>
-                            <span class="vinegar-desc">Bright, sharp, tropical. Pineapple, mango, passionfruit, ginger, yuzu.</span>
-                        </div>
-                    </div>
-                    <div class="vinegar-row">
-                        <span class="vinegar-emoji">🍷</span>
-                        <div class="vinegar-info">
-                            <span class="vinegar-name">RED WINE</span>
-                            <span class="vinegar-desc">Deep, rich, stone-fruit. Cherries, plums, dark berries, hibiscus.</span>
-                        </div>
-                    </div>
-                    <div class="vinegar-row">
-                        <span class="vinegar-emoji">🌰</span>
-                        <div class="vinegar-info">
-                            <span class="vinegar-name">SHERRY</span>
-                            <span class="vinegar-desc">Nutty, savory, oxidized. Figs, dates, hazelnut, sherry-cask profiles.</span>
-                        </div>
-                    </div>
-                    <div class="vinegar-row">
-                        <span class="vinegar-emoji">🍯</span>
-                        <div class="vinegar-info">
-                            <span class="vinegar-name">BALSAMIC</span>
-                            <span class="vinegar-desc">Aged, caramelized, sweet. Strawberry, fig, aged spirits — use sparingly.</span>
-                        </div>
-                    </div>
-                </div>
-                <button id="calc-mod-btn" class="btn-secondary">CALCULATE FINISH</button>
-                <div id="mod-results" class="output-container mt-20"></div>
             </div>
         </section>
 
