@@ -1278,224 +1278,117 @@ document.addEventListener('DOMContentLoaded', () => {
         });
     }
 
-    // --- LAB: ABV CALCULATOR ---
-    const updateAbvDilUI = () => {
-        const valEl = document.getElementById('abv-dil-val');
-        if(valEl) valEl.innerText = abvDilution + '%';
-    };
-
-    const abvMinus = document.getElementById('abv-dil-minus');
-    const abvPlus = document.getElementById('abv-dil-plus');
-    if (abvMinus) abvMinus.onclick = () => { triggerHaptic('light'); if(abvDilution > 0) { abvDilution--; updateAbvDilUI(); } };
-    if (abvPlus) abvPlus.onclick = () => { triggerHaptic('light'); abvDilution++; updateAbvDilUI(); };
-
-    window.changeAbv = (index, delta) => {
+    // --- THE LAB: SYRUP & BRIX ENGINE ---
+    let brixMode = 'build';
+    document.querySelectorAll('#lab-module .mod-pill').forEach(p => p.addEventListener('click', (e) => {
         triggerHaptic('light');
-        const el = document.getElementById(`abv-val-${index}`);
-        if (!el) return;
-        let current = parseFloat(el.getAttribute('data-abv')) || 0;
-        let next = current + delta;
-        if (next < 0) next = 0;
-        if (next > 100) next = 100;
-        el.setAttribute('data-abv', next);
-        el.innerText = next + '%';
-    };
-
-    const btnAbvSpec = document.getElementById('btn-abv-spec');
-    if (btnAbvSpec) {
-        btnAbvSpec.onclick = () => {
-            openSelectModal('SELECT SPEC FOR ABV', Object.keys(recipeVault).map(s => ({label: s, value: s})), (v, l) => {
-                activeAbvSpec = v; 
-                document.getElementById('btn-abv-spec').innerText = l; 
-                document.getElementById('btn-abv-spec').style.color = "var(--text-main)"; 
-                document.getElementById('btn-abv-spec').classList.remove('text-muted');
-                
-                const list = document.getElementById('abv-ing-list'); 
-                list.innerHTML = '';
-                
-                recipeVault[v].forEach((ing, i) => {
-                    let defAbv = 0; 
-                    if(ing.color === 'amber-glow') defAbv = 40; 
-                    if(ing.color === 'neon-cyan') defAbv = 20; 
-                    
-                    list.innerHTML += `
-                        <div class="abv-input-row" style="margin-bottom: 10px;">
-                            <span class="abv-ing-name ${ing.color}">${ing.name} <span class="text-muted">(${ing.amount}ml)</span></span>
-                            <div class="stepper-control mini-stepper" style="width: 110px;">
-                                <button class="stepper-btn" onclick="changeAbv(${i}, -1)">−</button>
-                                <span class="stepper-value abv-param" id="abv-val-${i}" data-vol="${ing.amount}" data-abv="${defAbv}">${defAbv}%</span>
-                                <button class="stepper-btn" onclick="changeAbv(${i}, 1)">+</button>
-                            </div>
-                        </div>`;
-                });
-                document.getElementById('abv-ing-container').classList.remove('hidden'); 
-                document.getElementById('abv-results').innerHTML = '';
-            });
-        };
-    }
-
-    const calcAbvBtn = document.getElementById('calc-abv-btn');
-    if (calcAbvBtn) {
-        calcAbvBtn.onclick = () => {
-            triggerHaptic('heavy');
-            let totalAlc = 0, totalVol = 0;
-            document.querySelectorAll('.abv-param').forEach(el => {
-                const v = parseFloat(el.getAttribute('data-vol')); 
-                const abv = parseFloat(el.getAttribute('data-abv')) || 0;
-                totalVol += v; 
-                totalAlc += (v * (abv / 100));
-            });
-            if (totalVol === 0) return;
-            const finalAbv = (totalAlc / (totalVol * (1 + (abvDilution / 100)))) * 100;
-            document.getElementById('abv-results').innerHTML = `
-                <div class="result-row mt-10"><span class="ing-name text-gold fw-bold">FINAL BATCH ABV</span><span class="ing-amount">${finalAbv.toFixed(1)}%</span></div>
-                <div class="result-row"><span class="ing-name text-muted text-sm">After ${abvDilution}% Dilution</span></div>`;
-        };
-    }
-
-    // --- LAB: FAT & PROTEIN WASHING ---
-    let washType = 'milk'; 
-    let fatIntensity = 'standard';
-    
-    document.querySelectorAll('.wash-pill').forEach(p => p.addEventListener('click', (e) => {
-        triggerHaptic('light');
-        document.querySelectorAll('.wash-pill').forEach(btn => btn.classList.remove('active'));
+        document.querySelectorAll('#lab-module .mod-pill').forEach(btn => btn.classList.remove('active'));
         e.target.classList.add('active');
-        washType = e.target.getAttribute('data-val');
+        brixMode = e.target.getAttribute('data-val');
         
-        document.getElementById('ui-milk-wash').classList.toggle('hidden', washType !== 'milk');
-        document.getElementById('ui-fat-wash').classList.toggle('hidden', washType !== 'fat');
-        document.getElementById('wash-results').innerHTML = '';
+        document.getElementById('ui-brix-build').classList.toggle('hidden', brixMode !== 'build');
+        document.getElementById('ui-brix-fix').classList.toggle('hidden', brixMode !== 'fix');
+        document.getElementById('brix-results').innerHTML = '';
     }));
 
-    const btnFatType = document.getElementById('btn-fat-type');
-    if (btnFatType) {
-        btnFatType.addEventListener('click', () => {
-            const opts = [
-                { label: 'Standard (Butter / Coconut Oil)', value: 'standard' },
-                { label: 'Heavy (Bacon / Sesame / Blue Cheese)', value: 'heavy' }
-            ];
-            openSelectModal('SELECT FAT INTENSITY', opts, (val, label) => {
-                fatIntensity = val;
-                document.getElementById('btn-fat-type').innerText = label;
-            });
-        });
-    }
-
-    const calcWashBtn = document.getElementById('calc-wash-btn');
-    if (calcWashBtn) {
-        calcWashBtn.addEventListener('click', () => {
-            triggerHaptic('heavy');
-            const res = document.getElementById('wash-results');
-            if (washType === 'milk') {
-                const punchVol = parseFloat(document.getElementById('milk-punch-vol').value) || 0;
-                res.innerHTML = `
-                    <h3 class="zone-header">CLARIFICATION (4:1 RATIO)</h3>
-                    <div class="result-row amber-glow"><span class="ing-name">Whole Milk Required</span><span class="ing-amount">${(punchVol/4).toFixed(0)}ml</span></div>
-                    <div class="result-row"><span class="ing-name text-muted text-sm">RULE: Pour Punch INTO the Milk.</span></div>
-                `;
-            } else {
-                const spiritVol = parseFloat(document.getElementById('fat-spirit-vol').value) || 0;
-                const ratio = fatIntensity === 'standard' ? (240/700) : (120/700);
-                res.innerHTML = `
-                    <h3 class="zone-header">FAT EXTRACTION</h3>
-                    <div class="result-row neon-cyan"><span class="ing-name">Warm Liquid Fat</span><span class="ing-amount">${(spiritVol * ratio).toFixed(0)}g</span></div>
-                    <div class="result-row"><span class="ing-name text-muted text-sm">Infuse at room temp. Freeze overnight. Skim solid fat.</span></div>
-                `;
-            }
-        });
-    }
-
-    // --- LAB: ACID ADJUSTER ---
-    let activeAcidBase = { val: 'orange' }; 
-    let activeAcidTarget = 'lemon';
-    
-    const btnAcidBase = document.getElementById('btn-acid-base');
-    if (btnAcidBase) {
-        btnAcidBase.addEventListener('click', () => {
-            openSelectModal('SELECT BASE LIQUID', [
-                {label: 'Orange Juice (~1%)', value: 'orange'},
-                {label: 'Grapefruit (~2%)', value: 'grapefruit'},
-                {label: 'Pineapple (~0.8%)', value: 'pineapple'}
+    let activeSyrupBase = { val: 100 }; 
+    const btnSyrupBase = document.getElementById('btn-syrup-base');
+    if (btnSyrupBase) {
+        btnSyrupBase.addEventListener('click', () => {
+            openSelectModal('SWEETENER BASE', [
+                {label: 'Dry Sugar (White/Demerara)', value: 100},
+                {label: 'Honey (~80 Bx)', value: 80},
+                {label: 'Agave (~75 Bx)', value: 75},
+                {label: 'Maple Syrup (~66 Bx)', value: 66}
             ], (v, l) => {
-                activeAcidBase.val = v; 
-                document.getElementById('btn-acid-base').innerText = l;
+                activeSyrupBase.val = parseFloat(v); 
+                btnSyrupBase.innerText = l;
             });
         });
     }
 
-    const btnAcidTarget = document.getElementById('btn-acid-target');
-    if (btnAcidTarget) {
-        btnAcidTarget.addEventListener('click', () => {
-            openSelectModal('SELECT TARGET ACIDITY', [
-                {label: 'Lemon (6% Citric)', value: 'lemon'},
-                {label: 'Lime (4% Cit, 2% Mal)', value: 'lime'}
-            ], (v, l) => {
-                activeAcidTarget = v; 
-                document.getElementById('btn-acid-target').innerText = l;
+    let activeSyrupTarget = { type: 'ratio', val: 1 };
+    const btnSyrupTarget = document.getElementById('btn-syrup-target');
+    if (btnSyrupTarget) {
+        btnSyrupTarget.addEventListener('click', () => {
+            openSelectModal('TARGET PROFILE', [
+                {label: '1:1 Ratio (Weight)', value: '1:1', data: 1},
+                {label: '1.5:1 Ratio (Weight)', value: '1.5:1', data: 1/1.5},
+                {label: '1.85:1 Ratio (Weight)', value: '1.85:1', data: 1/1.85},
+                {label: '2:1 Ratio (Weight)', value: '2:1', data: 0.5},
+                {label: '3:1 Ratio (Weight)', value: '3:1', data: 1/3},
+                {label: 'Custom Brix Target', value: 'custom', data: null}
+            ], (v, l, data) => {
+                activeSyrupTarget = { type: v === 'custom' ? 'custom' : 'ratio', val: data };
+                btnSyrupTarget.innerText = l;
+                document.getElementById('custom-brix-container').classList.toggle('hidden', v !== 'custom');
             });
         });
     }
 
-    const calcAcidBtn = document.getElementById('calc-acid-btn');
-    if (calcAcidBtn) {
-        calcAcidBtn.addEventListener('click', () => {
+    const calcBuildBtn = document.getElementById('calc-build-btn');
+    if (calcBuildBtn) {
+        calcBuildBtn.addEventListener('click', () => {
             triggerHaptic('heavy');
-            const vol = parseFloat(document.getElementById('acid-vol').value) || 0;
-            const res = document.getElementById('acid-results');
-            if(!vol) return;
+            const baseWeight = parseFloat(document.getElementById('syrup-base-weight').value) || 1000;
+            const res = document.getElementById('brix-results');
+            let waterToAdd = 0;
+            let finalBrix = 0;
+            const baseBrix = activeSyrupBase.val;
+            const totalSugar = baseWeight * (baseBrix / 100);
 
-            let cit = 0, mal = 0;
-            if (activeAcidTarget === 'lemon') {
-                if(activeAcidBase.val === 'orange') cit = vol * 0.05;
-                if(activeAcidBase.val === 'grapefruit') cit = vol * 0.04;
-                if(activeAcidBase.val === 'pineapple') cit = vol * 0.052;
+            if (activeSyrupTarget.type === 'ratio') {
+                waterToAdd = baseWeight * activeSyrupTarget.val;
+                const totalWeight = baseWeight + waterToAdd;
+                finalBrix = (totalSugar / totalWeight) * 100;
             } else {
-                if(activeAcidBase.val === 'orange') { cit = vol * 0.03; mal = vol * 0.02; }
-                if(activeAcidBase.val === 'grapefruit') { cit = vol * 0.02; mal = vol * 0.02; }
-                if(activeAcidBase.val === 'pineapple') { cit = vol * 0.032; mal = vol * 0.02; }
+                const targetBrix = parseFloat(document.getElementById('custom-target-brix').value) || 50;
+                if (targetBrix >= baseBrix) {
+                    return openAlertModal({ title: 'INVALID BRIX', message: `Target Brix (${targetBrix.toFixed(1)}) must be lower than Base Brix (${baseBrix.toFixed(1)}).` });
+                }
+                const totalWeight = totalSugar / (targetBrix / 100);
+                waterToAdd = totalWeight - baseWeight;
+                finalBrix = targetBrix;
             }
 
             res.innerHTML = `
-                <div class="result-row amber-glow"><span class="ing-name">Citric Acid Powder</span><span class="ing-amount">${cit.toFixed(1)}g</span></div>
-                ${mal > 0 ? `<div class="result-row magenta-glow"><span class="ing-name">Malic Acid Powder</span><span class="ing-amount">${mal.toFixed(1)}g</span></div>` : ''}
+                <h3 class="zone-header">SYRUP RECIPE</h3>
+                <div class="result-row neon-cyan"><span class="ing-name">Filtered Water to Add</span><span class="ing-amount">${waterToAdd.toFixed(1)}g</span></div>
+                <div class="result-row magenta-glow"><span class="ing-name">Final Yield (Weight)</span><span class="ing-amount">${(baseWeight + waterToAdd).toFixed(1)}g</span></div>
+                <div class="result-row mt-10"><span class="ing-name text-gold fw-bold">FINAL BRIX</span><span class="ing-amount">${finalBrix.toFixed(1)} Bx</span></div>
             `;
         });
     }
 
-    // --- LAB: MODIFIER ENGINE ---
-    let modType = 'cordial';
-    document.querySelectorAll('.mod-pill').forEach(p => p.addEventListener('click', (e) => {
-        triggerHaptic('light');
-        document.querySelectorAll('.mod-pill').forEach(btn => btn.classList.remove('active'));
-        e.target.classList.add('active');
-        modType = e.target.getAttribute('data-val');
-        const guide = document.getElementById('shrub-guide');
-        if (guide) guide.classList.toggle('hidden', modType !== 'shrub');
-    }));
-
-    const calcModBtn = document.getElementById('calc-mod-btn');
-    if (calcModBtn) {
-        calcModBtn.addEventListener('click', () => {
+    const calcFixBtn = document.getElementById('calc-fix-btn');
+    if (calcFixBtn) {
+        calcFixBtn.addEventListener('click', () => {
             triggerHaptic('heavy');
-            const weight = parseFloat(document.getElementById('mod-weight').value) || 0;
-            const res = document.getElementById('mod-results');
-            if(!weight) return;
+            const currentBrix = parseFloat(document.getElementById('fix-current-brix').value) || 65;
+            const targetBrix = parseFloat(document.getElementById('fix-target-brix').value) || 50;
+            const currentWeight = parseFloat(document.getElementById('fix-current-weight').value) || 1000;
+            const res = document.getElementById('brix-results');
 
-            if (modType === 'cordial') {
-                const totalAcid = weight * 0.015;
-                const cit = totalAcid * 0.75;
-                const mal = totalAcid * 0.25;
+            if (currentBrix === targetBrix) {
+                res.innerHTML = `<div class="result-row text-gold"><span class="ing-name">Already at Target Brix</span></div>`;
+                return;
+            }
+
+            if (currentBrix > targetBrix) {
+                // Dilute with water
+                const waterToAdd = currentWeight * ((currentBrix / targetBrix) - 1);
                 res.innerHTML = `
-                    <h3 class="zone-header">CORDIAL POWDERS</h3>
-                    <div class="result-row amber-glow"><span class="ing-name">Citric Acid</span><span class="ing-amount">${cit.toFixed(1)}g</span></div>
-                    <div class="result-row magenta-glow"><span class="ing-name">Malic Acid</span><span class="ing-amount">${mal.toFixed(1)}g</span></div>
+                    <h3 class="zone-header">DILUTION REQUIRED</h3>
+                    <div class="result-row neon-cyan"><span class="ing-name">Filtered Water to Add</span><span class="ing-amount">${waterToAdd.toFixed(1)}g</span></div>
+                    <div class="result-row mt-10"><span class="ing-name text-gold fw-bold">NEW YIELD</span><span class="ing-amount">${(currentWeight + waterToAdd).toFixed(1)}g</span></div>
                 `;
             } else {
-                const vin = weight * 0.5;
+                // Enrich with dry sugar (assuming 100 brix)
+                const sugarToAdd = currentWeight * ((targetBrix - currentBrix) / (100 - targetBrix));
                 res.innerHTML = `
-                    <h3 class="zone-header">SHRUB LIQUID</h3>
-                    <div class="result-row neon-cyan"><span class="ing-name">Vinegar Weight</span><span class="ing-amount">${vin.toFixed(0)}g</span></div>
+                    <h3 class="zone-header">ENRICHMENT REQUIRED</h3>
+                    <div class="result-row magenta-glow"><span class="ing-name">Dry Sugar to Add</span><span class="ing-amount">${sugarToAdd.toFixed(1)}g</span></div>
+                    <div class="result-row mt-10"><span class="ing-name text-gold fw-bold">NEW YIELD</span><span class="ing-amount">${(currentWeight + sugarToAdd).toFixed(1)}g</span></div>
                 `;
             }
         });
