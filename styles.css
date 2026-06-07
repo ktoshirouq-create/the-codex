@@ -136,6 +136,8 @@ body { background-color: var(--bg-oled); color: var(--text-main); display: flex;
 .wash-pill.active, .mod-pill.active, .view-pill.active { color: var(--bg-oled); }
 .wash-pill:active, .mod-pill:active, .view-pill:active { transform: scale(0.96); transition: transform 0.1s ease; }
 .view-pill { font-size: 0.7rem; padding: 11px 0; letter-spacing: 1.5px; font-weight: 900; }
+.vault-content.view-service .vault-subbatch, .vault-content.view-service .vault-divider { display: none !important; }
+.vault-content.view-prep .vault-main-section, .vault-content.view-prep .vault-divider { display: none !important; }
 /* Quick Pills */
 .quick-pills { gap: 10px; }
 .quick-pill-btn { flex: 1; border: 1px solid rgba(255,255,255,0.1); background: rgba(255,255,255,0.04); color: var(--text-muted); padding: 10px 0; border-radius: 10px; font-size: 0.8rem; font-weight: 700; cursor: pointer; }
