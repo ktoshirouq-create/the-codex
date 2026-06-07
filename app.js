@@ -319,6 +319,32 @@ document.addEventListener('DOMContentLoaded', () => {
             details.className = 'vault-details';
             details.id = `details-${id}`;
 
+            const content = document.createElement('div');
+            content.className = 'vault-content view-service';
+
+            if (subBatches.length > 0) {
+                const viewToggle = document.createElement('div');
+                viewToggle.className = 'pill-group view-toggle';
+                viewToggle.style.marginTop = '12px';
+                viewToggle.style.marginBottom = '18px';
+                viewToggle.onclick = (e) => e.stopPropagation();
+                viewToggle.innerHTML = `
+                    <button class="view-pill active" data-view="service">SERVICE</button>
+                    <button class="view-pill" data-view="prep">PREP</button>
+                `;
+                details.appendChild(viewToggle);
+
+                viewToggle.querySelectorAll('.view-pill').forEach(btn => {
+                    btn.addEventListener('click', (e) => {
+                        e.stopPropagation();
+                        triggerHaptic('light');
+                        viewToggle.querySelectorAll('.view-pill').forEach(b => b.classList.remove('active'));
+                        btn.classList.add('active');
+                        content.className = btn.getAttribute('data-view') === 'service' ? 'vault-content view-service' : 'vault-content view-prep';
+                    });
+                });
+            }
+
             const mult = document.createElement('div');
             mult.className = 'service-multiplier';
             mult.onclick = (e) => e.stopPropagation();
@@ -332,8 +358,6 @@ document.addEventListener('DOMContentLoaded', () => {
             `;
             details.appendChild(mult);
 
-            const content = document.createElement('div');
-            content.className = 'vault-content';
             details.appendChild(content);
             vItem.appendChild(details);
 
