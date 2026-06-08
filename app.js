@@ -674,7 +674,7 @@ document.addEventListener('DOMContentLoaded', () => {
             ? capitalize(batchBuilderState.customType.trim())
             : batchBuilderState.type;
         if (!batchName) return openAlertModal("Pick a batch type or enter a custom name.");
-        const categoryMap = { 'Spirit Batch': 'amber-glow', 'Juice Batch': 'juice-glow', 'Mocktail': 'juice-glow' };
+        const categoryMap = { 'Spirit Batch': 'amber-glow', 'Juice Batch': 'juice-glow', 'Espresso Batch': 'coffee-dark', 'Mocktail': 'juice-glow' };
         const mainCat = categoryMap[batchName] || 'amber-glow';
         let subSection = builderState.sections.find(s => s.name === batchName);
         if (!subSection) {
@@ -698,7 +698,7 @@ document.addEventListener('DOMContentLoaded', () => {
         const container = document.getElementById('batch-form-container');
         if (!container) return;
         if (!batchBuilderState) { container.innerHTML = ''; return; }
-        const types = ['Spirit Batch', 'Juice Batch', 'Mocktail', 'Custom'];
+        const types = ['Spirit Batch', 'Juice Batch', 'Espresso Batch', 'Mocktail', 'Custom'];
         container.innerHTML = `
             <div class="batch-form">
                 <h4 class="batch-form-title">NEW BATCH</h4>
@@ -726,12 +726,33 @@ document.addEventListener('DOMContentLoaded', () => {
         container.querySelectorAll('.batch-type-pill').forEach(pill => {
             pill.addEventListener('click', () => {
                 triggerHaptic('light');
-                batchBuilderState.type = pill.getAttribute('data-type');
-                if (batchBuilderState.type === 'Mocktail') {
-                    batchBuilderState.ingredients.forEach(ing => {
-                        if (ing.cat === 'amber-glow' || ing.cat === 'neon-cyan') ing.cat = 'juice-glow';
-                    });
+                const newType = pill.getAttribute('data-type');
+                batchBuilderState.type = newType;
+                
+                // BOUNCER: Enforce rules when switching batch types
+                let allowed = ['amber-glow', 'neon-cyan', 'juice-glow', 'magenta-glow', 'coffee-dark'];
+                if (BATCH_CONFIG[newType]) {
+                    allowed = BATCH_CONFIG[newType].allowedCategories;
+                } else if (newType === 'Mocktail') {
+                    allowed = ['juice-glow', 'magenta-glow'];
                 }
+                
+                let bouncerTriggered = false;
+                batchBuilderState.ingredients.forEach(ing => {
+                    if (!allowed.includes(ing.cat)) {
+                        ing.cat = allowed[0]; // Auto-correct to a valid category
+                        bouncerTriggered = true;
+                    }
+                });
+
+                if (bouncerTriggered) {
+                    triggerHaptic('heavy');
+                    const batchForm = container.querySelector('.batch-form');
+                    batchForm.classList.remove('bouncer-reject-pulse');
+                    void batchForm.offsetWidth; // Trigger reflow
+                    batchForm.classList.add('bouncer-reject-pulse');
+                }
+                
                 renderBatchForm();
             });
         });
@@ -740,7 +761,12 @@ document.addEventListener('DOMContentLoaded', () => {
         renderBatchIngredients();
         document.getElementById('batch-add-ing-btn').addEventListener('click', () => {
             triggerHaptic('light');
-            const defaultCat = batchBuilderState.type === 'Mocktail' ? 'juice-glow' : 'amber-glow';
+            let defaultCat = 'amber-glow';
+            if (BATCH_CONFIG[batchBuilderState.type]) {
+                defaultCat = BATCH_CONFIG[batchBuilderState.type].allowedCategories[0];
+            } else if (batchBuilderState.type === 'Mocktail') {
+                defaultCat = 'juice-glow';
+            }
             batchBuilderState.ingredients.push({ amount: 0, name: '', cat: defaultCat });
             renderBatchIngredients();
         });
@@ -787,13 +813,30 @@ document.addEventListener('DOMContentLoaded', () => {
             });
             row.querySelector('.builder-row-cat').addEventListener('click', () => {
                 triggerHaptic('light');
-                const cats = batchBuilderState.type === 'Mocktail'
-                    ? ['juice-glow', 'magenta-glow']
-                    : ['amber-glow', 'neon-cyan', 'juice-glow', 'magenta-glow'];
+                
+                let cats = ['amber-glow', 'neon-cyan', 'juice-glow', 'magenta-glow', 'coffee-dark'];
+                if (BATCH_CONFIG[batchBuilderState.type]) {
+                    cats = BATCH_CONFIG[batchBuilderState.type].allowedCategories;
+                } else if (batchBuilderState.type === 'Mocktail') {
+                    cats = ['juice-glow', 'magenta-glow'];
+                }
+
+                // BOUNCER LOCK: If only one category is allowed, reject the change
+                if (cats.length === 1) {
+                    row.classList.remove('bouncer-reject-pulse');
+                    void row.offsetWidth; // Trigger reflow
+                    row.classList.add('bouncer-reject-pulse');
+                    triggerHaptic('heavy');
+                    return; 
+                }
+
                 const current = batchBuilderState.ingredients[idx].cat;
                 let curIdx = cats.indexOf(current);
+                if (curIdx === -1) curIdx = 0;
+                
                 const next = cats[(curIdx + 1) % cats.length];
                 batchBuilderState.ingredients[idx].cat = next;
+                
                 const btn = row.querySelector('.builder-row-cat');
                 btn.className = `builder-row-cat ${next}`;
                 btn.innerText = catLabels[next];
