@@ -1,5 +1,20 @@
 document.addEventListener('DOMContentLoaded', () => {
     
+    // --- BATCHING ENGINE RULES (THE BOUNCER) ---
+    const BATCH_CONFIG = {
+        'Spirit Batch': { allowedCategories: ['amber-glow', 'neon-cyan'] }, // Spirits & Liqueurs
+        'Juice Batch': { allowedCategories: ['juice-glow', 'magenta-glow'] }, // Juices & Syrups
+        'Espresso Batch': { allowedCategories: ['coffee-dark'] } // Espresso
+    };
+
+    function canAddToBatch(catClass, batchType) {
+        if (batchType === 'Mocktail' || batchType === 'Custom') return true; // No strict rules for these
+        const config = BATCH_CONFIG[batchType];
+        if (!config) return true;
+        return config.allowedCategories.includes(catClass);
+    }
+    // -------------------------------------------
+
     // --- STATE & CONFIG ---
     const API_URL = 'https://script.google.com/macros/s/AKfycbx_fku9O9Ljbul6DIYuattXyjtu2fH9U_Reb24irImb1vU60jxDJWExv4yy9s1k0w3Q/exec';
     let recipeVault = {};
@@ -452,7 +467,7 @@ document.addEventListener('DOMContentLoaded', () => {
 
     // --- SPEC BUILDER ---
     let builderState = { name: '', sections: [{ name: 'MAIN', ingredients: [] }] };
-    const catLabels = { 'amber-glow': 'SPIRIT', 'neon-cyan': 'LIQUEUR', 'juice-glow': 'JUICE', 'magenta-glow': 'SYRUP' };
+    const catLabels = { 'amber-glow': 'SPIRIT', 'neon-cyan': 'LIQUEUR', 'juice-glow': 'JUICE', 'magenta-glow': 'SYRUP', 'coffee-dark': 'ESPRESSO' };
 
     function renderBuilder() {
         const container = document.getElementById('builder-sections');
@@ -826,8 +841,8 @@ document.addEventListener('DOMContentLoaded', () => {
     const SHELF_KEY = 'codex_shelf_v1';
     let shelfData = {};
     let shelfAddState = null;
-    const shelfCatLabels = { 'amber-glow': 'SPIRIT', 'neon-cyan': 'LIQUEUR', 'juice-glow': 'JUICE', 'magenta-glow': 'SYRUP' };
-    const shelfDefaultAbvs = { 'amber-glow': 40, 'neon-cyan': 20, 'juice-glow': 0, 'magenta-glow': 0 };
+    const shelfCatLabels = { 'amber-glow': 'SPIRIT', 'neon-cyan': 'LIQUEUR', 'juice-glow': 'JUICE', 'magenta-glow': 'SYRUP', 'coffee-dark': 'ESPRESSO' };
+    const shelfDefaultAbvs = { 'amber-glow': 40, 'neon-cyan': 20, 'juice-glow': 0, 'magenta-glow': 0, 'coffee-dark': 0 };
 
     function loadShelf() {
         try {
