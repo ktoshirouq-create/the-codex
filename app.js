@@ -751,6 +751,7 @@ document.addEventListener('DOMContentLoaded', () => {
                     batchForm.classList.remove('bouncer-reject-pulse');
                     void batchForm.offsetWidth; // Trigger reflow
                     batchForm.classList.add('bouncer-reject-pulse');
+                    openAlertModal({ title: 'THE BOUNCER', message: 'Invalid ingredients were automatically corrected to match this batch type.' });
                 }
                 
                 renderBatchForm();
@@ -827,6 +828,7 @@ document.addEventListener('DOMContentLoaded', () => {
                     void row.offsetWidth; // Trigger reflow
                     row.classList.add('bouncer-reject-pulse');
                     triggerHaptic('heavy');
+                    openAlertModal({ title: 'THE BOUNCER', message: `This bucket is strictly locked to ${catLabels[cats[0]]}.` });
                     return; 
                 }
 
@@ -1646,4 +1648,14 @@ document.addEventListener('DOMContentLoaded', () => {
             }
         });
     }
+
+    // --- SESSION TIMEOUT: DEFAULT TO SERVICE MODE ---
+    document.addEventListener('visibilitychange', () => {
+        if (document.visibilityState === 'visible') {
+            // When the app is opened/returns from background, force all toggles back to Service Mode
+            document.querySelectorAll('.view-toggle .view-pill[data-view="service"]').forEach(btn => {
+                if (!btn.classList.contains('active')) btn.click();
+            });
+        }
+    });
 });
