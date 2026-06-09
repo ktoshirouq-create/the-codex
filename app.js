@@ -515,9 +515,9 @@ document.addEventListener('DOMContentLoaded', () => {
                     }
                 });
                 row.querySelector('.builder-row-cat').addEventListener('click', () => {
-                    triggerHaptic('light');
-                    const cats = ['amber-glow', 'neon-cyan', 'juice-glow', 'magenta-glow'];
-                    const current = builderState.sections[secIdx].ingredients[ingIdx].cat;
+                triggerHaptic('light');
+                const cats = ['amber-glow', 'neon-cyan', 'juice-glow', 'magenta-glow', 'coffee-dark'];
+                const current = builderState.sections[secIdx].ingredients[ingIdx].cat;
                     const next = cats[(cats.indexOf(current) + 1) % cats.length];
                     builderState.sections[secIdx].ingredients[ingIdx].cat = next;
                     const btn = row.querySelector('.builder-row-cat');
@@ -665,7 +665,8 @@ document.addEventListener('DOMContentLoaded', () => {
             }
         }
         if (batchBuilderState.ingredients.length === 0) {
-            batchBuilderState.ingredients.push({ amount: 0, name: '', cat: allowed[0] });
+            let defName = allowed[0] === 'coffee-dark' ? 'Espresso' : '';
+            batchBuilderState.ingredients.push({ amount: 0, name: defName, cat: allowed[0] });
         } else {
             batchBuilderState.perDrink = batchBuilderState.ingredients.reduce((sum, ing) => sum + (ing.amount || 0), 0);
         }
@@ -797,7 +798,8 @@ document.addEventListener('DOMContentLoaded', () => {
 
                 if (batchBuilderState.ingredients.length === 0) {
                     let defCat = allowed[0] || 'amber-glow';
-                    batchBuilderState.ingredients.push({ amount: 0, name: '', cat: defCat });
+                    let defName = defCat === 'coffee-dark' ? 'Espresso' : '';
+                    batchBuilderState.ingredients.push({ amount: 0, name: defName, cat: defCat });
                     batchBuilderState.perDrink = 0;
                 } else {
                     batchBuilderState.perDrink = batchBuilderState.ingredients.reduce((sum, ing) => sum + (ing.amount || 0), 0);
@@ -818,7 +820,8 @@ document.addEventListener('DOMContentLoaded', () => {
             let defaultCat = 'amber-glow';
             if (BATCH_CONFIG[batchBuilderState.type]) defaultCat = BATCH_CONFIG[batchBuilderState.type].allowedCategories[0];
             else if (batchBuilderState.type === 'Mocktail') defaultCat = 'juice-glow';
-            batchBuilderState.ingredients.push({ amount: 0, name: '', cat: defaultCat });
+            let defName = defaultCat === 'coffee-dark' ? 'Espresso' : '';
+            batchBuilderState.ingredients.push({ amount: 0, name: defName, cat: defaultCat });
             renderBatchIngredients();
         });
 
@@ -877,7 +880,8 @@ document.addEventListener('DOMContentLoaded', () => {
                     void row.offsetWidth; // Trigger reflow
                     row.classList.add('bouncer-reject-pulse');
                     triggerHaptic('heavy');
-                    openAlertModal({ title: 'THE BOUNCER', message: `This bucket is strictly locked to ${catLabels[cats[0]]}.` });
+                    const catName = catLabels[cats[0]] || (cats[0] === 'coffee-dark' ? 'ESPRESSO' : 'this category');
+                    openAlertModal({ title: 'THE BOUNCER', message: `This bucket is strictly locked to ${catName}.` });
                     return; 
                 }
 
