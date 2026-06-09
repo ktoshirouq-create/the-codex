@@ -2,7 +2,7 @@ document.addEventListener('DOMContentLoaded', () => {
     
     // --- BATCHING ENGINE RULES (THE BOUNCER) ---
     const BATCH_CONFIG = {
-        'Spirit Batch': { allowedCategories: ['amber-glow', 'neon-cyan'] }, // Spirits & Liqueurs
+        'Spirit Batch': { allowedCategories: ['amber-glow', 'neon-cyan', 'magenta-glow'] }, // Spirits, Liqueurs, & Syrups!
         'Juice Batch': { allowedCategories: ['juice-glow', 'magenta-glow'] }, // Juices & Syrups
         'Espresso Batch': { allowedCategories: ['coffee-dark'] } // Espresso
     };
@@ -649,16 +649,37 @@ document.addEventListener('DOMContentLoaded', () => {
     let batchBuilderState = null;
 
     function openBatchBuilder() {
-        batchBuilderState = {
-            type: 'Spirit Batch',
-            customType: '',
-            ingredients: [{ amount: 0, name: '', cat: 'amber-glow' }],
-            perDrink: 50
-        };
+        batchBuilderState = { type: 'Spirit Batch', customType: '', ingredients: [], perDrink: 0 };
+        
+        const mainSec = builderState.sections.find(s => s.name === 'MAIN');
+        let allowed = BATCH_CONFIG['Spirit Batch'].allowedCategories;
+        if (mainSec) {
+            for (let i = mainSec.ingredients.length - 1; i >= 0; i--) {
+                const ing = mainSec.ingredients[i];
+                if (ing.name.trim() && ing.amount > 0 && allowed.includes(ing.cat)) {
+                    batchBuilderState.ingredients.unshift(mainSec.ingredients.splice(i, 1)[0]);
+                }
+            }
+        }
+        if (batchBuilderState.ingredients.length === 0) {
+            batchBuilderState.ingredients.push({ amount: 0, name: '', cat: allowed[0] });
+        } else {
+            batchBuilderState.perDrink = batchBuilderState.ingredients.reduce((sum, ing) => sum + (ing.amount || 0), 0);
+        }
+        renderBuilder();
         renderBatchForm();
     }
 
     function closeBatchBuilder() {
+        if (batchBuilderState) {
+            const mainSec = builderState.sections.find(s => s.name === 'MAIN');
+            if (mainSec) {
+                batchBuilderState.ingredients.forEach(ing => {
+                    if (ing.name.trim()) mainSec.ingredients.push(ing);
+                });
+                renderBuilder();
+            }
+        }
         batchBuilderState = null;
         const c = document.getElementById('batch-form-container');
         if (c) c.innerHTML = '';
@@ -669,9 +690,9 @@ document.addEventListener('DOMContentLoaded', () => {
         const validIngs = batchBuilderState.ingredients.filter(i => i.name.trim() && i.amount > 0);
         if (validIngs.length === 0) return openAlertModal("Add at least one constituent ingredient with name and amount.");
         
-        // AUTO-CALCULATE PER DRINK AMOUNT
-        const perDrink = validIngs.reduce((sum, ing) => sum + (ing.amount || 0), 0);
-        if (perDrink <= 0) return openAlertModal("Batch volume must be greater than 0.");
+        // RELY ON MANUAL SERVICE POUR OVERRIDE
+        const perDrink = batchBuilderState.perDrink;
+        if (!perDrink || perDrink <= 0) return openAlertModal("Set a service pour amount greater than 0.");
         
         const batchName = batchBuilderState.type === 'Custom'
             ? capitalize(batchBuilderState.customType.trim())
@@ -703,32 +724,6 @@ document.addEventListener('DOMContentLoaded', () => {
         if (!batchBuilderState) { container.innerHTML = ''; return; }
         const types = ['Spirit Batch', 'Juice Batch', 'Espresso Batch', 'Mocktail', 'Custom'];
         
-        // --- PULL FROM MAIN LOGIC ---
-        const mainSection = builderState.sections.find(s => s.name === 'MAIN');
-        let pullHtml = '';
-        if (mainSection) {
-            let allowed = ['amber-glow', 'neon-cyan', 'juice-glow', 'magenta-glow', 'coffee-dark'];
-            if (BATCH_CONFIG[batchBuilderState.type]) {
-                allowed = BATCH_CONFIG[batchBuilderState.type].allowedCategories;
-            } else if (batchBuilderState.type === 'Mocktail') {
-                allowed = ['juice-glow', 'magenta-glow'];
-            }
-            
-            const pullable = mainSection.ingredients.map((ing, idx) => ({ing, idx})).filter(item => item.ing.name.trim() && item.ing.amount > 0 && allowed.includes(item.ing.cat));
-            
-            if (pullable.length > 0) {
-                pullHtml = `
-                    <div style="margin-bottom: 15px; padding-bottom: 15px; border-bottom: 1px dashed rgba(255,255,255,0.1);">
-                        <span class="text-gold text-xs" style="display:block; margin-bottom: 8px;">TAP TO PULL FROM MAIN:</span>
-                        <div style="display: flex; gap: 8px; flex-wrap: wrap;">
-                            ${pullable.map(item => `<button class="batch-pull-chip ${item.ing.cat}" data-idx="${item.idx}" style="padding: 8px 12px; border-radius: 8px; font-size: 0.75rem; font-weight: 800; border: none; color: #000; cursor: pointer;">＋ ${item.ing.name} (${item.ing.amount}ml)</button>`).join('')}
-                        </div>
-                    </div>
-                `;
-            }
-        }
-        // -----------------------------
-
         container.innerHTML = `
             <div class="batch-form">
                 <h4 class="batch-form-title">NEW BATCH</h4>
@@ -736,96 +731,104 @@ document.addEventListener('DOMContentLoaded', () => {
                     ${types.map(t => `<button class="batch-type-pill ${batchBuilderState.type === t ? 'active' : ''}" data-type="${t}">${t.replace(' Batch', '')}</button>`).join('')}
                 </div>
                 ${batchBuilderState.type === 'Custom' ? `<input type="text" class="premium-text-input batch-custom-input" placeholder="Batch name" value="${batchBuilderState.customType.replace(/"/g, '&quot;')}">` : ''}
-                ${pullHtml}
                 <h5 class="batch-section-label">CONSTITUENTS (1-COCKTAIL RATIO)</h5>
                 <div id="batch-ingredients-list"></div>
                 <button id="batch-add-ing-btn" class="builder-add-ing">＋ INGREDIENT</button>
-                <div class="batch-per-drink-row" style="justify-content: center; margin-top: 15px; border-top: 1px solid rgba(255,255,255,0.05); padding-top: 15px;">
-                    <span class="batch-per-drink-label text-gold" style="font-size: 0.75rem; letter-spacing: 1.5px;">TOTAL PER DRINK:</span>
-                    <span id="batch-auto-sum" class="batch-per-drink-label" style="margin-left: 10px; font-size: 1.2rem; font-weight: 900;">0 ml</span>
+                
+                <div class="batch-per-drink-row" style="flex-direction: column; align-items: stretch; margin-top: 15px; border-top: 1px solid rgba(255,255,255,0.05); padding-top: 15px;">
+                    <div style="display:flex; justify-content: space-between; margin-bottom: 12px; align-items: center;">
+                        <span class="text-muted text-xs">RATIO SUM:</span>
+                        <span id="batch-auto-sum" class="text-muted text-xs" style="font-size: 0.9rem;">0 ml</span>
+                    </div>
+                    <div style="display:flex; justify-content: space-between; align-items: center;">
+                        <span class="batch-per-drink-label text-gold" style="font-size: 0.75rem; letter-spacing: 1.5px;">SERVICE POUR:</span>
+                        <div style="display: flex; align-items: center; gap: 8px;">
+                            <button class="batch-stepper-btn" id="batch-per-drink-minus">−5</button>
+                            <input type="number" id="batch-per-drink-input" class="batch-per-drink-input" value="${batchBuilderState.perDrink}">
+                            <button class="batch-stepper-btn" id="batch-per-drink-plus">+5</button>
+                            <span class="batch-per-drink-suffix">ml</span>
+                        </div>
+                    </div>
                 </div>
-                <div class="batch-form-actions" style="margin-top: 15px;">
+
+                <div class="batch-form-actions" style="margin-top: 20px;">
                     <button id="batch-cancel-btn" class="batch-cancel">CANCEL</button>
                     <button id="batch-create-btn" class="batch-confirm">CREATE BATCH</button>
                 </div>
             </div>
         `;
+
         container.querySelectorAll('.batch-type-pill').forEach(pill => {
             pill.addEventListener('click', () => {
                 triggerHaptic('light');
                 const newType = pill.getAttribute('data-type');
+                if (newType === batchBuilderState.type) return;
+
+                const mainSec = builderState.sections.find(s => s.name === 'MAIN');
+                if (mainSec) {
+                    batchBuilderState.ingredients.forEach(ing => {
+                        if (ing.name.trim()) mainSec.ingredients.push(ing);
+                    });
+                }
+                batchBuilderState.ingredients = [];
                 batchBuilderState.type = newType;
                 
-                // BOUNCER: Enforce rules when switching batch types
                 let allowed = ['amber-glow', 'neon-cyan', 'juice-glow', 'magenta-glow', 'coffee-dark'];
-                if (BATCH_CONFIG[newType]) {
-                    allowed = BATCH_CONFIG[newType].allowedCategories;
-                } else if (newType === 'Mocktail') {
-                    allowed = ['juice-glow', 'magenta-glow'];
-                }
-                
-                let bouncerTriggered = false;
-                batchBuilderState.ingredients.forEach(ing => {
-                    if (!allowed.includes(ing.cat)) {
-                        ing.cat = allowed[0]; // Auto-correct to a valid category
-                        bouncerTriggered = true;
-                    }
-                });
+                if (BATCH_CONFIG[newType]) allowed = BATCH_CONFIG[newType].allowedCategories;
+                else if (newType === 'Mocktail') allowed = ['juice-glow', 'magenta-glow'];
 
-                if (bouncerTriggered) {
-                    triggerHaptic('heavy');
-                    const batchForm = container.querySelector('.batch-form');
-                    batchForm.classList.remove('bouncer-reject-pulse');
-                    void batchForm.offsetWidth; // Trigger reflow
-                    batchForm.classList.add('bouncer-reject-pulse');
-                    openAlertModal({ title: 'THE BOUNCER', message: 'Invalid ingredients were automatically corrected to match this batch type.' });
+                if (mainSec) {
+                    for (let i = mainSec.ingredients.length - 1; i >= 0; i--) {
+                        const ing = mainSec.ingredients[i];
+                        if (ing.name.trim() && ing.amount > 0 && allowed.includes(ing.cat)) {
+                            batchBuilderState.ingredients.unshift(mainSec.ingredients.splice(i, 1)[0]);
+                        }
+                    }
                 }
-                
+
+                if (batchBuilderState.ingredients.length === 0) {
+                    let defCat = allowed[0] || 'amber-glow';
+                    batchBuilderState.ingredients.push({ amount: 0, name: '', cat: defCat });
+                    batchBuilderState.perDrink = 0;
+                } else {
+                    batchBuilderState.perDrink = batchBuilderState.ingredients.reduce((sum, ing) => sum + (ing.amount || 0), 0);
+                }
+
+                renderBuilder();
                 renderBatchForm();
             });
         });
+
         const customInput = container.querySelector('.batch-custom-input');
         if (customInput) customInput.addEventListener('input', e => { batchBuilderState.customType = e.target.value; });
         
-        // Listeners for Pull Chips
-        container.querySelectorAll('.batch-pull-chip').forEach(chip => {
-            chip.addEventListener('click', (e) => {
-                triggerHaptic('light');
-                const idx = parseInt(e.target.getAttribute('data-idx'));
-                const mainSec = builderState.sections.find(s => s.name === 'MAIN');
-                
-                if (mainSec && mainSec.ingredients[idx]) {
-                    // Remove the empty placeholder row if it's the only thing in the batch
-                    if (batchBuilderState.ingredients.length === 1 && !batchBuilderState.ingredients[0].name) {
-                        batchBuilderState.ingredients = [];
-                    }
-                    
-                    // Move ingredient from MAIN to Batch array
-                    const pulled = mainSec.ingredients.splice(idx, 1)[0];
-                    batchBuilderState.ingredients.push(pulled);
-                    
-                    // Update both UIs instantly
-                    renderBuilder(); 
-                    renderBatchForm(); 
-                }
-            });
-        });
-
         renderBatchIngredients();
+        
         document.getElementById('batch-add-ing-btn').addEventListener('click', () => {
             triggerHaptic('light');
             let defaultCat = 'amber-glow';
-            if (BATCH_CONFIG[batchBuilderState.type]) {
-                defaultCat = BATCH_CONFIG[batchBuilderState.type].allowedCategories[0];
-            } else if (batchBuilderState.type === 'Mocktail') {
-                defaultCat = 'juice-glow';
-            }
+            if (BATCH_CONFIG[batchBuilderState.type]) defaultCat = BATCH_CONFIG[batchBuilderState.type].allowedCategories[0];
+            else if (batchBuilderState.type === 'Mocktail') defaultCat = 'juice-glow';
             batchBuilderState.ingredients.push({ amount: 0, name: '', cat: defaultCat });
             renderBatchIngredients();
         });
-        // Removed old manual stepper event listeners
+
+        document.getElementById('batch-per-drink-input').addEventListener('input', e => {
+            batchBuilderState.perDrink = parseFloat(e.target.value) || 0;
+        });
+        document.getElementById('batch-per-drink-minus').addEventListener('click', () => {
+            triggerHaptic('light');
+            batchBuilderState.perDrink = Math.max(0, (batchBuilderState.perDrink || 0) - 5);
+            document.getElementById('batch-per-drink-input').value = batchBuilderState.perDrink;
+        });
+        document.getElementById('batch-per-drink-plus').addEventListener('click', () => {
+            triggerHaptic('light');
+            batchBuilderState.perDrink = (batchBuilderState.perDrink || 0) + 5;
+            document.getElementById('batch-per-drink-input').value = batchBuilderState.perDrink;
+        });
         document.getElementById('batch-cancel-btn').addEventListener('click', () => { triggerHaptic('light'); closeBatchBuilder(); });
         document.getElementById('batch-create-btn').addEventListener('click', () => { triggerHaptic('heavy'); confirmBatchBuilder(); });
+        
         updateBatchYieldDisplay();
     }
 
@@ -882,10 +885,19 @@ document.addEventListener('DOMContentLoaded', () => {
             });
             row.querySelector('.builder-row-remove').addEventListener('click', () => {
                 triggerHaptic('light');
-                batchBuilderState.ingredients.splice(idx, 1);
+                const removed = batchBuilderState.ingredients.splice(idx, 1)[0];
+                
+                // Exclude: Return it safely to MAIN
+                const mainSec = builderState.sections.find(s => s.name === 'MAIN');
+                if (mainSec && removed.name.trim() !== '') {
+                    mainSec.ingredients.push(removed);
+                    renderBuilder();
+                }
+
                 if (batchBuilderState.ingredients.length === 0) {
-                    const def = batchBuilderState.type === 'Mocktail' ? 'juice-glow' : 'amber-glow';
-                    batchBuilderState.ingredients.push({ amount: 0, name: '', cat: def });
+                    let defCat = 'amber-glow';
+                    if (BATCH_CONFIG[batchBuilderState.type]) defCat = BATCH_CONFIG[batchBuilderState.type].allowedCategories[0];
+                    batchBuilderState.ingredients.push({ amount: 0, name: '', cat: defCat });
                 }
                 renderBatchIngredients();
                 updateBatchYieldDisplay();
