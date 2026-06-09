@@ -316,9 +316,8 @@ body { background-color: var(--bg-oled); color: var(--text-main); display: flex;
 .ops-row.completed .ops-checkbox::after { content: '✓'; color: #000; font-size: 0.8rem; font-weight: 900; }
 .ops-row.completed .ops-text { text-decoration: line-through; color: var(--text-muted); }
 
-/* OPS Category Pills Override (Fixes the 4-item overlap) */
-#ops-category-pills::before { display: none; }
-#ops-category-pills .mod-pill.active { background: var(--nodee-gold); color: var(--bg-oled); border-radius: 10px; }
+/* OPS UI Overrides: Hide sliding background if the group is inactive */
+.ops-pill-group:not(:has(.active))::before { display: none; }
 
 /* Subtasks & Accordion */
 .ops-row { flex-direction: column; align-items: stretch; padding: 0; }
