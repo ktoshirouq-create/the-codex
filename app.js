@@ -702,6 +702,33 @@ document.addEventListener('DOMContentLoaded', () => {
         if (!container) return;
         if (!batchBuilderState) { container.innerHTML = ''; return; }
         const types = ['Spirit Batch', 'Juice Batch', 'Espresso Batch', 'Mocktail', 'Custom'];
+        
+        // --- PULL FROM MAIN LOGIC ---
+        const mainSection = builderState.sections.find(s => s.name === 'MAIN');
+        let pullHtml = '';
+        if (mainSection) {
+            let allowed = ['amber-glow', 'neon-cyan', 'juice-glow', 'magenta-glow', 'coffee-dark'];
+            if (BATCH_CONFIG[batchBuilderState.type]) {
+                allowed = BATCH_CONFIG[batchBuilderState.type].allowedCategories;
+            } else if (batchBuilderState.type === 'Mocktail') {
+                allowed = ['juice-glow', 'magenta-glow'];
+            }
+            
+            const pullable = mainSection.ingredients.map((ing, idx) => ({ing, idx})).filter(item => item.ing.name.trim() && item.ing.amount > 0 && allowed.includes(item.ing.cat));
+            
+            if (pullable.length > 0) {
+                pullHtml = `
+                    <div style="margin-bottom: 15px; padding-bottom: 15px; border-bottom: 1px dashed rgba(255,255,255,0.1);">
+                        <span class="text-gold text-xs" style="display:block; margin-bottom: 8px;">TAP TO PULL FROM MAIN:</span>
+                        <div style="display: flex; gap: 8px; flex-wrap: wrap;">
+                            ${pullable.map(item => `<button class="batch-pull-chip ${item.ing.cat}" data-idx="${item.idx}" style="padding: 8px 12px; border-radius: 8px; font-size: 0.75rem; font-weight: 800; border: none; color: #000; cursor: pointer;">＋ ${item.ing.name} (${item.ing.amount}ml)</button>`).join('')}
+                        </div>
+                    </div>
+                `;
+            }
+        }
+        // -----------------------------
+
         container.innerHTML = `
             <div class="batch-form">
                 <h4 class="batch-form-title">NEW BATCH</h4>
@@ -709,6 +736,7 @@ document.addEventListener('DOMContentLoaded', () => {
                     ${types.map(t => `<button class="batch-type-pill ${batchBuilderState.type === t ? 'active' : ''}" data-type="${t}">${t.replace(' Batch', '')}</button>`).join('')}
                 </div>
                 ${batchBuilderState.type === 'Custom' ? `<input type="text" class="premium-text-input batch-custom-input" placeholder="Batch name" value="${batchBuilderState.customType.replace(/"/g, '&quot;')}">` : ''}
+                ${pullHtml}
                 <h5 class="batch-section-label">CONSTITUENTS (1-COCKTAIL RATIO)</h5>
                 <div id="batch-ingredients-list"></div>
                 <button id="batch-add-ing-btn" class="builder-add-ing">＋ INGREDIENT</button>
@@ -758,6 +786,31 @@ document.addEventListener('DOMContentLoaded', () => {
         });
         const customInput = container.querySelector('.batch-custom-input');
         if (customInput) customInput.addEventListener('input', e => { batchBuilderState.customType = e.target.value; });
+        
+        // Listeners for Pull Chips
+        container.querySelectorAll('.batch-pull-chip').forEach(chip => {
+            chip.addEventListener('click', (e) => {
+                triggerHaptic('light');
+                const idx = parseInt(e.target.getAttribute('data-idx'));
+                const mainSec = builderState.sections.find(s => s.name === 'MAIN');
+                
+                if (mainSec && mainSec.ingredients[idx]) {
+                    // Remove the empty placeholder row if it's the only thing in the batch
+                    if (batchBuilderState.ingredients.length === 1 && !batchBuilderState.ingredients[0].name) {
+                        batchBuilderState.ingredients = [];
+                    }
+                    
+                    // Move ingredient from MAIN to Batch array
+                    const pulled = mainSec.ingredients.splice(idx, 1)[0];
+                    batchBuilderState.ingredients.push(pulled);
+                    
+                    // Update both UIs instantly
+                    renderBuilder(); 
+                    renderBatchForm(); 
+                }
+            });
+        });
+
         renderBatchIngredients();
         document.getElementById('batch-add-ing-btn').addEventListener('click', () => {
             triggerHaptic('light');
