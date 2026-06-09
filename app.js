@@ -651,6 +651,9 @@ document.addEventListener('DOMContentLoaded', () => {
     function openBatchBuilder() {
         batchBuilderState = { type: 'Spirit Batch', customType: '', ingredients: [], perDrink: 0 };
         
+        const addBtn = document.getElementById('add-batch-btn');
+        if (addBtn) addBtn.classList.add('hidden'); // Hide button to prevent accidental closing
+        
         const mainSec = builderState.sections.find(s => s.name === 'MAIN');
         let allowed = BATCH_CONFIG['Spirit Batch'].allowedCategories;
         if (mainSec) {
@@ -683,6 +686,9 @@ document.addEventListener('DOMContentLoaded', () => {
         batchBuilderState = null;
         const c = document.getElementById('batch-form-container');
         if (c) c.innerHTML = '';
+        
+        const addBtn = document.getElementById('add-batch-btn');
+        if (addBtn) addBtn.classList.remove('hidden'); // Bring the button back
     }
 
     function confirmBatchBuilder() {
@@ -709,14 +715,17 @@ document.addEventListener('DOMContentLoaded', () => {
             subSection.ingredients.push({ amount: i.amount, name: capitalize(i.name.trim()), cat: i.cat });
         });
         const mainSection = builderState.sections.find(s => s.name === 'MAIN');
-        if (mainSection) {
-            const existing = mainSection.ingredients.find(i => i.name && i.name.toLowerCase() === batchName.toLowerCase());
-            if (existing) { existing.amount = perDrink; existing.cat = mainCat; }
-            else { mainSection.ingredients.push({ amount: perDrink, name: batchName, cat: mainCat }); }
-        }
-        closeBatchBuilder();
-        renderBuilder();
-    }
+                if (mainSection) {
+                    const existing = mainSection.ingredients.find(i => i.name && i.name.toLowerCase() === batchName.toLowerCase());
+                    if (existing) { existing.amount = perDrink; existing.cat = mainCat; }
+                    else { mainSection.ingredients.push({ amount: perDrink, name: batchName, cat: mainCat }); }
+                }
+                
+                // PREVENT BUG: Clear the state so it doesn't dump items back to MAIN
+                batchBuilderState.ingredients = [];
+                closeBatchBuilder();
+                renderBuilder();
+            }
 
     function renderBatchForm() {
         const container = document.getElementById('batch-form-container');
