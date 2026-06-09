@@ -1647,6 +1647,157 @@ document.addEventListener('DOMContentLoaded', () => {
         });
     }
 
+    // --- OPS MODULE ENGINE ---
+    const OPS_KEY = 'codex_ops_v1';
+    let opsData = { opening: [], closing: [], weekly: [], monthly: [] };
+    let activeOpsCategory = 'opening';
+
+    function loadOps() {
+        try {
+            const raw = localStorage.getItem(OPS_KEY);
+            if (raw) opsData = JSON.parse(raw);
+        } catch (e) { console.error('Failed to load OPS data'); }
+
+        // THE 5 AM WIPE LOGIC
+        const now = new Date();
+        let lastWipeStr = localStorage.getItem('codex_ops_last_wipe');
+        let wipeDate = new Date();
+        wipeDate.setHours(5, 0, 0, 0); // 5 AM today boundary
+
+        // If it's currently before 5 AM, the "current day's boundary" was yesterday at 5 AM
+        if (now.getHours() < 5) wipeDate.setDate(wipeDate.getDate() - 1);
+
+        if (!lastWipeStr || new Date(parseInt(lastWipeStr)) < wipeDate) {
+            // Time to wipe daily tasks!
+            opsData.opening.forEach(t => t.completed = false);
+            opsData.closing.forEach(t => t.completed = false);
+            
+            // Check for Monday (Weekly Wipe)
+            if (now.getDay() === 1 && (!lastWipeStr || new Date(parseInt(lastWipeStr)).getDay() !== 1)) {
+                opsData.weekly.forEach(t => t.completed = false);
+            }
+            // Check for 1st of Month (Monthly Wipe)
+            if (now.getDate() === 1 && (!lastWipeStr || new Date(parseInt(lastWipeStr)).getDate() !== 1)) {
+                opsData.monthly.forEach(t => t.completed = false);
+            }
+
+            localStorage.setItem('codex_ops_last_wipe', Date.now().toString());
+            saveOps();
+        }
+    }
+
+    function saveOps() {
+        localStorage.setItem(OPS_KEY, JSON.stringify(opsData));
+    }
+
+    window.renderOpsList = function() {
+        const container = document.getElementById('ops-list-container');
+        if (!container) return;
+        container.innerHTML = '';
+
+        // Check if app is currently in EDIT MODE
+        const addBtnContainer = document.getElementById('ops-add-btn');
+        const isEditMode = addBtnContainer && !addBtnContainer.parentElement.classList.contains('hidden');
+        container.classList.toggle('ops-edit-mode', isEditMode);
+
+        const tasks = opsData[activeOpsCategory] || [];
+
+        // SINK TO BOTTOM LOGIC: Sort incomplete tasks to the top
+        const sortedTasks = [...tasks].map((t, i) => ({...t, originalIndex: i}))
+                                      .sort((a, b) => (a.completed === b.completed ? 0 : a.completed ? 1 : -1));
+
+        if (sortedTasks.length === 0) {
+            container.innerHTML = '<p class="text-muted text-sm text-center" style="padding: 20px;">No tasks. Unlock the app to add some.</p>';
+            return;
+        }
+
+        sortedTasks.forEach(taskObj => {
+            const row = document.createElement('div');
+            row.className = `ops-row ${taskObj.completed ? 'completed' : ''}`;
+            row.innerHTML = `
+                <div class="ops-checkbox"></div>
+                <span class="ops-text">${taskObj.text}</span>
+                <button class="ops-delete-btn">×</button>
+            `;
+
+            row.addEventListener('click', (e) => {
+                if (isEditMode) return; // Do nothing in edit mode
+                triggerHaptic('light');
+                opsData[activeOpsCategory][taskObj.originalIndex].completed = !opsData[activeOpsCategory][taskObj.originalIndex].completed;
+                saveOps();
+                renderOpsList(); // Re-renders and sinks to bottom instantly
+            });
+
+            row.querySelector('.ops-delete-btn').addEventListener('click', (e) => {
+                e.stopPropagation();
+                triggerHaptic('heavy');
+                opsData[activeOpsCategory].splice(taskObj.originalIndex, 1);
+                saveOps();
+                renderOpsList();
+            });
+
+            container.appendChild(row);
+        });
+    }
+
+    // Initialize OPS
+    loadOps();
+    renderOpsList();
+
+    // OPS Event Listeners
+    document.querySelectorAll('#ops-category-pills .mod-pill').forEach(pill => {
+        pill.addEventListener('click', (e) => {
+            triggerHaptic('light');
+            document.querySelectorAll('#ops-category-pills .mod-pill').forEach(p => p.classList.remove('active'));
+            pill.classList.add('active');
+            activeOpsCategory = pill.getAttribute('data-val');
+            renderOpsList();
+        });
+    });
+
+    const opsAddBtn = document.getElementById('ops-add-btn');
+    if (opsAddBtn) {
+        opsAddBtn.addEventListener('click', () => {
+            triggerHaptic('light');
+            openSelectModal('NEW TASK', [], null, {
+                placeholder: 'Type task here...',
+                btnLabel: 'ADD',
+                onSubmit: (val) => {
+                    opsData[activeOpsCategory].push({ text: val, completed: false });
+                    saveOps();
+                    renderOpsList();
+                }
+            });
+        });
+    }
+
+    const opsResetBtn = document.getElementById('ops-reset-btn');
+    if (opsResetBtn) {
+        opsResetBtn.addEventListener('click', () => {
+            openConfirmModal({
+                title: 'FORCE RESET',
+                message: 'Uncheck all tasks across ALL categories?',
+                confirmLabel: 'RESET',
+                danger: true,
+                onConfirm: () => {
+                    ['opening', 'closing', 'weekly', 'monthly'].forEach(cat => {
+                        opsData[cat].forEach(t => t.completed = false);
+                    });
+                    saveOps();
+                    renderOpsList();
+                }
+            });
+        });
+    }
+
+    // Link the global lock button to the OPS render function so UI updates when unlocked
+    const globalLockBtn = document.getElementById('edit-toggle');
+    if (globalLockBtn) {
+        globalLockBtn.addEventListener('click', () => {
+            setTimeout(window.renderOpsList, 10); // Slight delay to ensure DOM updated classes first
+        });
+    }
+
     // --- NAV & LOCK LOGIC ---
     const tabs = document.querySelectorAll('.nav-tab');
     const modules = document.querySelectorAll('.module');
