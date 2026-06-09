@@ -283,9 +283,13 @@ document.addEventListener('DOMContentLoaded', () => {
                 const sbIngs = recipeVault[sbName] || [];
                 if (sbIngs.length === 0) return;
                 const label = sbName.replace(cocktail + ' — ', '');
-                const batchYield = sbIngs.reduce((s, i) => s + (i.amount || 0), 0);
+                
+                // MULTIPLIER MATH: Scale the total yield and individual amounts by the round
+                const baseBatchYield = sbIngs.reduce((s, i) => s + (i.amount || 0), 0);
+                const batchYield = baseBatchYield * round;
                 const mainRef = mainIngs.find(i => i.name === label);
                 let yieldLabel = `${formatAmount(batchYield)}ml`;
+                
                 if (mainRef && mainRef.amount > 0) {
                     const drinks = Math.floor(batchYield / mainRef.amount);
                     yieldLabel += ` · ${drinks} drinks`;
@@ -294,7 +298,7 @@ document.addEventListener('DOMContentLoaded', () => {
                 section.className = 'vault-subbatch';
                 let html = `<h4 class="vault-subbatch-title">${label.toUpperCase()}<span class="vault-yield-label">${yieldLabel}</span></h4>`;
                 sbIngs.forEach(ing => {
-                    html += `<div class="subbatch-row ${ing.color}"><span class="ing-name">${ing.name}</span><span class="ing-amount">${formatAmount(ing.amount)}ml</span></div>`;
+                    html += `<div class="subbatch-row ${ing.color}"><span class="ing-name">${ing.name}</span><span class="ing-amount">${formatAmount(ing.amount * round)}ml</span></div>`;
                 });
                 section.innerHTML = html;
                 container.appendChild(section);
@@ -723,10 +727,14 @@ document.addEventListener('DOMContentLoaded', () => {
                 }
                 
                 // PREVENT BUG: Clear the state so it doesn't dump items back to MAIN
-                batchBuilderState.ingredients = [];
-                closeBatchBuilder();
-                renderBuilder();
-            }
+            batchBuilderState.ingredients = [];
+            closeBatchBuilder();
+            renderBuilder();
+            
+            // PREVENT SCROLL JUMP: Snap back to the top of the builder
+            const scrollArea = document.getElementById('scroll-area');
+            if (scrollArea) scrollArea.scrollTop = 0;
+        }
 
     function renderBatchForm() {
         const container = document.getElementById('batch-form-container');
