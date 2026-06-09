@@ -316,8 +316,12 @@ body { background-color: var(--bg-oled); color: var(--text-main); display: flex;
 .ops-row.completed .ops-checkbox::after { content: '✓'; color: #000; font-size: 0.8rem; font-weight: 900; }
 .ops-row.completed .ops-text { text-decoration: line-through; color: var(--text-muted); }
 
-/* Edit Mode Overrides */
-.ops-edit-mode .ops-row { cursor: default; background: rgba(255,255,255,0.05); }
-.ops-edit-mode .ops-row:active { transform: none; }
-.ops-edit-mode .ops-checkbox { display: none; }
-.ops-edit-mode .ops-delete-btn { display: block; }
+/* OPS Category Pills Override (Fixes the 4-item overlap) */
+#ops-category-pills::before { display: none; }
+#ops-category-pills .mod-pill.active { background: var(--nodee-gold); color: var(--bg-oled); border-radius: 10px; }
+
+/* Subtasks & Accordion */
+.ops-row { flex-direction: column; align-items: stretch; padding: 0; }
+.ops-row-main { display: flex; align-items: center; gap: 12px; padding: 14px 12px; width: 100%; }
+.ops-subtasks { display: none; padding: 0 12px 14px 46px; flex-direction: column; gap: 6px; border-top: 1px dashed rgba(255,255,255,0.05); margin-top: -6px; }
+.ops-row.expanded .ops-subtasks { display: flex; }
