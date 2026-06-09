@@ -1818,10 +1818,10 @@ document.addEventListener('DOMContentLoaded', () => {
     renderOpsList();
 
     // OPS Event Listeners
-    document.querySelectorAll('#ops-category-pills .mod-pill').forEach(pill => {
+    document.querySelectorAll('.ops-pill').forEach(pill => {
         pill.addEventListener('click', (e) => {
             triggerHaptic('light');
-            document.querySelectorAll('#ops-category-pills .mod-pill').forEach(p => p.classList.remove('active'));
+            document.querySelectorAll('.ops-pill').forEach(p => p.classList.remove('active'));
             pill.classList.add('active');
             activeOpsCategory = pill.getAttribute('data-val');
             renderOpsList();
