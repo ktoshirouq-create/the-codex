@@ -1716,11 +1716,6 @@ document.addEventListener('DOMContentLoaded', () => {
         if (!container) return;
         container.innerHTML = '';
 
-        // Check if app is currently in EDIT MODE
-        const addBtnContainer = document.getElementById('ops-add-btn');
-        const isEditMode = addBtnContainer && !addBtnContainer.parentElement.classList.contains('hidden');
-        container.classList.toggle('ops-edit-mode', isEditMode);
-
         const tasks = opsData[activeOpsCategory] || [];
 
         // SINK TO BOTTOM LOGIC: Sort incomplete tasks to the top
@@ -1728,34 +1723,91 @@ document.addEventListener('DOMContentLoaded', () => {
                                       .sort((a, b) => (a.completed === b.completed ? 0 : a.completed ? 1 : -1));
 
         if (sortedTasks.length === 0) {
-            container.innerHTML = '<p class="text-muted text-sm text-center" style="padding: 20px;">No tasks. Unlock the app to add some.</p>';
+            container.innerHTML = '<p class="text-muted text-sm text-center" style="padding: 20px;">No tasks. Tap ＋ ADD TASK below to begin.</p>';
             return;
         }
 
         sortedTasks.forEach(taskObj => {
+            const hasSubtasks = taskObj.subtasks && taskObj.subtasks.length > 0;
             const row = document.createElement('div');
             row.className = `ops-row ${taskObj.completed ? 'completed' : ''}`;
-            row.innerHTML = `
-                <div class="ops-checkbox"></div>
-                <span class="ops-text">${taskObj.text}</span>
-                <button class="ops-delete-btn">×</button>
+            
+            let html = `
+                <div class="ops-row-main">
+                    <div class="ops-checkbox"></div>
+                    <span class="ops-text">${taskObj.text}</span>
+                </div>
             `;
+            if (hasSubtasks) {
+                html += `<div class="ops-subtasks">`;
+                taskObj.subtasks.forEach(sub => {
+                    html += `<div style="font-size: 0.8rem; color: var(--text-muted);">• ${sub}</div>`;
+                });
+                html += `</div>`;
+            }
+            row.innerHTML = html;
 
-            row.addEventListener('click', (e) => {
-                if (isEditMode) return; // Do nothing in edit mode
+            // Click Checkbox -> Toggle Complete
+            row.querySelector('.ops-checkbox').addEventListener('click', (e) => {
+                e.stopPropagation();
                 triggerHaptic('light');
                 opsData[activeOpsCategory][taskObj.originalIndex].completed = !opsData[activeOpsCategory][taskObj.originalIndex].completed;
                 saveOps();
-                renderOpsList(); // Re-renders and sinks to bottom instantly
-            });
-
-            row.querySelector('.ops-delete-btn').addEventListener('click', (e) => {
-                e.stopPropagation();
-                triggerHaptic('heavy');
-                opsData[activeOpsCategory].splice(taskObj.originalIndex, 1);
-                saveOps();
                 renderOpsList();
             });
+
+            // Click Text -> Expand Accordion (if subtasks exist)
+            row.querySelector('.ops-text').addEventListener('click', (e) => {
+                e.stopPropagation();
+                if (hasSubtasks) {
+                    triggerHaptic('light');
+                    row.classList.toggle('expanded');
+                }
+            });
+
+            // Long Press -> Task Actions (Add Substep / Delete)
+            let pressTimer = null;
+            let pressStart = null;
+            row.addEventListener('pointerdown', (e) => {
+                pressStart = { x: e.clientX, y: e.clientY };
+                pressTimer = setTimeout(() => {
+                    pressTimer = null;
+                    triggerHaptic('medium');
+                    openSelectModal('TASK ACTIONS', [
+                        { label: 'Add Sub-Step', value: 'add-sub' },
+                        { label: 'Delete Task', value: 'delete' }
+                    ], (val) => {
+                        if (val === 'delete') {
+                            opsData[activeOpsCategory].splice(taskObj.originalIndex, 1);
+                            saveOps();
+                            renderOpsList();
+                        } else if (val === 'add-sub') {
+                            setTimeout(() => {
+                                openSelectModal('ADD SUB-STEP', [], null, {
+                                    placeholder: 'e.g. Backflush groupheads...',
+                                    btnLabel: 'ADD',
+                                    onSubmit: (subText) => {
+                                        if (!opsData[activeOpsCategory][taskObj.originalIndex].subtasks) {
+                                            opsData[activeOpsCategory][taskObj.originalIndex].subtasks = [];
+                                        }
+                                        opsData[activeOpsCategory][taskObj.originalIndex].subtasks.push(subText);
+                                        saveOps();
+                                        renderOpsList();
+                                    }
+                                });
+                            }, 350);
+                        }
+                    });
+                }, 500);
+            });
+            row.addEventListener('pointermove', (e) => {
+                if (!pressTimer || !pressStart) return;
+                if (Math.abs(e.clientX - pressStart.x) > 10 || Math.abs(e.clientY - pressStart.y) > 10) {
+                    clearTimeout(pressTimer); pressTimer = null;
+                }
+            });
+            row.addEventListener('pointerup', () => { if (pressTimer) { clearTimeout(pressTimer); pressTimer = null; } });
+            row.addEventListener('pointercancel', () => { if (pressTimer) { clearTimeout(pressTimer); pressTimer = null; } });
 
             container.appendChild(row);
         });
@@ -1781,10 +1833,10 @@ document.addEventListener('DOMContentLoaded', () => {
         opsAddBtn.addEventListener('click', () => {
             triggerHaptic('light');
             openSelectModal('NEW TASK', [], null, {
-                placeholder: 'Type task here...',
+                placeholder: 'Type main task here...',
                 btnLabel: 'ADD',
                 onSubmit: (val) => {
-                    opsData[activeOpsCategory].push({ text: val, completed: false });
+                    opsData[activeOpsCategory].push({ text: val, completed: false, subtasks: [] });
                     saveOps();
                     renderOpsList();
                 }
@@ -1802,20 +1854,12 @@ document.addEventListener('DOMContentLoaded', () => {
                 danger: true,
                 onConfirm: () => {
                     ['opening', 'closing', 'weekly', 'monthly'].forEach(cat => {
-                        opsData[cat].forEach(t => t.completed = false);
+                        if(opsData[cat]) opsData[cat].forEach(t => t.completed = false);
                     });
                     saveOps();
                     renderOpsList();
                 }
             });
-        });
-    }
-
-    // Link the global lock button to the OPS render function so UI updates when unlocked
-    const globalLockBtn = document.getElementById('edit-toggle');
-    if (globalLockBtn) {
-        globalLockBtn.addEventListener('click', () => {
-            setTimeout(window.renderOpsList, 10); // Slight delay to ensure DOM updated classes first
         });
     }
 
