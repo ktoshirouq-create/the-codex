@@ -668,8 +668,11 @@ document.addEventListener('DOMContentLoaded', () => {
         if (!batchBuilderState) return;
         const validIngs = batchBuilderState.ingredients.filter(i => i.name.trim() && i.amount > 0);
         if (validIngs.length === 0) return openAlertModal("Add at least one constituent ingredient with name and amount.");
-        const perDrink = batchBuilderState.perDrink;
-        if (!perDrink || perDrink <= 0) return openAlertModal("Set a per-drink amount.");
+        
+        // AUTO-CALCULATE PER DRINK AMOUNT
+        const perDrink = validIngs.reduce((sum, ing) => sum + (ing.amount || 0), 0);
+        if (perDrink <= 0) return openAlertModal("Batch volume must be greater than 0.");
+        
         const batchName = batchBuilderState.type === 'Custom'
             ? capitalize(batchBuilderState.customType.trim())
             : batchBuilderState.type;
@@ -706,18 +709,14 @@ document.addEventListener('DOMContentLoaded', () => {
                     ${types.map(t => `<button class="batch-type-pill ${batchBuilderState.type === t ? 'active' : ''}" data-type="${t}">${t.replace(' Batch', '')}</button>`).join('')}
                 </div>
                 ${batchBuilderState.type === 'Custom' ? `<input type="text" class="premium-text-input batch-custom-input" placeholder="Batch name" value="${batchBuilderState.customType.replace(/"/g, '&quot;')}">` : ''}
-                <h5 class="batch-section-label">CONSTITUENTS (batch recipe amounts)</h5>
+                <h5 class="batch-section-label">CONSTITUENTS (1-COCKTAIL RATIO)</h5>
                 <div id="batch-ingredients-list"></div>
                 <button id="batch-add-ing-btn" class="builder-add-ing">＋ INGREDIENT</button>
-                <div class="batch-per-drink-row">
-                    <span class="batch-per-drink-label">Per drink:</span>
-                    <button class="batch-stepper-btn" id="batch-per-drink-minus">−5</button>
-                    <input type="number" id="batch-per-drink-input" class="batch-per-drink-input" value="${batchBuilderState.perDrink}">
-                    <button class="batch-stepper-btn" id="batch-per-drink-plus">+5</button>
-                    <span class="batch-per-drink-suffix">ml</span>
+                <div class="batch-per-drink-row" style="justify-content: center; margin-top: 15px; border-top: 1px solid rgba(255,255,255,0.05); padding-top: 15px;">
+                    <span class="batch-per-drink-label text-gold" style="font-size: 0.75rem; letter-spacing: 1.5px;">TOTAL PER DRINK:</span>
+                    <span id="batch-auto-sum" class="batch-per-drink-label" style="margin-left: 10px; font-size: 1.2rem; font-weight: 900;">0 ml</span>
                 </div>
-                <div id="batch-yield-display" class="batch-yield-display"></div>
-                <div class="batch-form-actions">
+                <div class="batch-form-actions" style="margin-top: 15px;">
                     <button id="batch-cancel-btn" class="batch-cancel">CANCEL</button>
                     <button id="batch-create-btn" class="batch-confirm">CREATE BATCH</button>
                 </div>
@@ -771,22 +770,7 @@ document.addEventListener('DOMContentLoaded', () => {
             batchBuilderState.ingredients.push({ amount: 0, name: '', cat: defaultCat });
             renderBatchIngredients();
         });
-        document.getElementById('batch-per-drink-input').addEventListener('input', e => {
-            batchBuilderState.perDrink = parseFloat(e.target.value) || 0;
-            updateBatchYieldDisplay();
-        });
-        document.getElementById('batch-per-drink-minus').addEventListener('click', () => {
-            triggerHaptic('light');
-            batchBuilderState.perDrink = Math.max(0, (batchBuilderState.perDrink || 0) - 5);
-            document.getElementById('batch-per-drink-input').value = batchBuilderState.perDrink;
-            updateBatchYieldDisplay();
-        });
-        document.getElementById('batch-per-drink-plus').addEventListener('click', () => {
-            triggerHaptic('light');
-            batchBuilderState.perDrink = (batchBuilderState.perDrink || 0) + 5;
-            document.getElementById('batch-per-drink-input').value = batchBuilderState.perDrink;
-            updateBatchYieldDisplay();
-        });
+        // Removed old manual stepper event listeners
         document.getElementById('batch-cancel-btn').addEventListener('click', () => { triggerHaptic('light'); closeBatchBuilder(); });
         document.getElementById('batch-create-btn').addEventListener('click', () => { triggerHaptic('heavy'); confirmBatchBuilder(); });
         updateBatchYieldDisplay();
@@ -858,17 +842,10 @@ document.addEventListener('DOMContentLoaded', () => {
     }
 
     function updateBatchYieldDisplay() {
-        const display = document.getElementById('batch-yield-display');
-        if (!display || !batchBuilderState) return;
+        const autoSum = document.getElementById('batch-auto-sum');
+        if (!autoSum || !batchBuilderState) return;
         const total = batchBuilderState.ingredients.reduce((s, i) => s + (i.amount || 0), 0);
-        const perDrink = batchBuilderState.perDrink || 0;
-        if (total === 0) { display.innerText = ''; return; }
-        let text = `Yields ${formatAmount(total)}ml`;
-        if (perDrink > 0) {
-            const drinks = Math.floor(total / perDrink);
-            text += ` · ${drinks} drink${drinks !== 1 ? 's' : ''}`;
-        }
-        display.innerText = text;
+        autoSum.innerText = `${total.toFixed(1).replace(/\.0$/, '')} ml`;
     }
 
     const addBatchBtn = document.getElementById('add-batch-btn');
