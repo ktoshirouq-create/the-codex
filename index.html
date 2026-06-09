@@ -251,11 +251,21 @@
             <div class="card glass-panel">
                 <h2 class="card-title text-gold">OPERATIONS & SOPS</h2>
                 
-                <div class="pill-group" id="ops-category-pills">
-                    <button class="mod-pill active" data-val="opening">OPEN</button>
-                    <button class="mod-pill" data-val="closing">CLOSE</button>
-                    <button class="mod-pill" data-val="weekly">WEEKLY</button>
-                    <button class="mod-pill" data-val="monthly">MONTHLY</button>
+                <div class="flex-row" style="margin-bottom: 20px;">
+                    <div class="half-width">
+                        <span class="text-muted text-xs" style="display:block; margin-bottom: 8px; text-align: center;">DAILY TASKS</span>
+                        <div class="pill-group ops-pill-group" style="margin-bottom: 0;">
+                            <button class="mod-pill ops-pill active" data-val="opening">OPEN</button>
+                            <button class="mod-pill ops-pill" data-val="closing">CLOSE</button>
+                        </div>
+                    </div>
+                    <div class="half-width">
+                        <span class="text-muted text-xs" style="display:block; margin-bottom: 8px; text-align: center;">PERIODIC</span>
+                        <div class="pill-group ops-pill-group" style="margin-bottom: 0;">
+                            <button class="mod-pill ops-pill" data-val="weekly">WEEKLY</button>
+                            <button class="mod-pill ops-pill" data-val="monthly">MONTHLY</button>
+                        </div>
+                    </div>
                 </div>
                 
                 <div id="ops-list-container" style="margin-top: 20px; display: flex; flex-direction: column; gap: 8px;">
