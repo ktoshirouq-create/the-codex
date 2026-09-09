@@ -4366,15 +4366,14 @@ document.addEventListener('DOMContentLoaded', () => {
         // to the shortfall. Chips run to the busy par; BUSY re-reckons against it.
         function stapleStripHtml(g) {
             const c = countOf(g.gkey);
-            if (c && c.n >= (c.busy ? g.parBusy : g.par)) {
-                return `<div class="staple-strip stocked-line">STOCKED ${c.n}</div>`;
-            }
+            const atPar = !!c && c.n >= (c.busy ? g.parBusy : g.par);
             let chips = '<span class="staple-have">HAVE</span>';
             for (let i = 0; i <= g.parBusy; i++) {
                 chips += `<button class="staple-chip${c && c.n === i ? ' on' : ''}${i === g.par ? ' parmark' : ''}" data-n="${i}">${i}</button>`;
             }
             chips += `<button class="staple-busy${c && c.busy ? ' on' : ''}">BUSY</button>`;
-            return `<div class="staple-strip">${chips}</div>`;
+            if (atPar) chips += `<span class="staple-atpar">AT PAR</span>`;
+            return `<div class="staple-strip${atPar ? ' atpar' : ''}${c ? ' counted' : ''}">${chips}</div>`;
         }
 
         // Wire a strip that is already in the DOM.
@@ -4581,7 +4580,6 @@ document.addEventListener('DOMContentLoaded', () => {
                 if (stapleG.members.length > 1) {
                     labelHtml += `<div class="staple-serves">serves ${stapleG.members.map(m => m.spec).join(' \u00b7 ')}</div>`;
                 }
-                labelHtml += stapleStripHtml(stapleG);
             }
             
             html += `<span class="ops-text" style="flex:1;">${labelHtml}</span>`;
@@ -4614,6 +4612,8 @@ document.addEventListener('DOMContentLoaded', () => {
 
             if (stapleG) {
                 row.classList.add('has-staple');
+                const main = row.querySelector('.ops-row-main');
+                if (main) main.insertAdjacentHTML('afterend', stapleStripHtml(stapleG));
                 bindStapleStrip(row, stapleG);
             }
 

@@ -525,15 +525,17 @@ body { background-color: var(--bg-oled); color: var(--text-main); display: flex;
 .staple-name { font-size: 0.88rem; }
 .staple-more { flex-shrink: 0; }
 .staple-serves { font-size: 0.6rem; color: #4a4a4a; margin-top: 2px; }
-.staple-strip { display: flex; align-items: center; gap: 4px; margin-top: 7px; flex-wrap: wrap; }
-.staple-strip.stocked-line { font-size: 0.53rem; font-weight: 900; letter-spacing: 1.5px; color: var(--done-green); margin-top: 5px; }
-.staple-have { font-size: 0.5rem; letter-spacing: 1.5px; color: #4a4a4a; margin-right: 2px; font-weight: 900; }
-.staple-chip { width: 27px; padding: 4px 0; background: none; border: 1px solid rgba(255,255,255,0.08); border-radius: 6px; color: #6a6a6a; font-size: 0.68rem; cursor: pointer; }
-.staple-chip.parmark { border-bottom-color: rgba(158,196,168,0.5); border-bottom-width: 2px; }
+.staple-strip { display: flex; align-items: center; gap: 5px; padding: 0 12px 11px 12px; }
+.ops-staple-card .staple-strip { padding: 7px 0 0 0; }
+.staple-strip.counted { opacity: 1; }
+.staple-have { font-size: 0.5rem; letter-spacing: 1.5px; color: #4a4a4a; font-weight: 900; margin-right: 1px; }
+.staple-chip { flex: 1; min-width: 0; max-width: 46px; padding: 6px 0; background: none; border: 1px solid rgba(255,255,255,0.08); border-radius: 7px; color: #6a6a6a; font-size: 0.72rem; cursor: pointer; }
+.staple-chip.parmark { border-bottom-color: rgba(158,196,168,0.45); }
 .staple-chip.on { background: rgba(158,196,168,0.16); border-color: rgba(158,196,168,0.6); color: var(--juice-glow); font-weight: 700; }
-.staple-busy { margin-left: 6px; padding: 4px 8px; background: none; border: 1px solid rgba(255,255,255,0.08); border-radius: 6px; color: #4a4a4a; font-size: 0.5rem; letter-spacing: 1.5px; font-weight: 900; cursor: pointer; }
+.staple-busy { padding: 6px 9px; background: none; border: 1px solid rgba(255,255,255,0.08); border-radius: 7px; color: #4a4a4a; font-size: 0.5rem; letter-spacing: 1.2px; font-weight: 900; cursor: pointer; flex-shrink: 0; }
 .staple-busy.on { border-color: rgba(229,177,93,0.55); color: var(--amber-glow); }
-.ops-row.has-staple .ops-row-main { align-items: flex-start; }
+.staple-atpar { font-size: 0.48rem; letter-spacing: 1.2px; font-weight: 900; color: var(--done-green); flex-shrink: 0; }
+.staple-strip.atpar .staple-chip.on { background: rgba(111,191,139,0.16); border-color: rgba(111,191,139,0.55); color: var(--done-green); }
 .ops-row.sec-juice-batch .ops-text { color: var(--juice-glow); }
 .ops-row.sec-clarified-batch .ops-text { color: var(--magenta-glow); }
 .ops-row.sec-mise .ops-text { color: var(--mixer-fizz); }
