@@ -522,7 +522,11 @@ body { background-color: var(--bg-oled); color: var(--text-main); display: flex;
 .ops-staple-card:not(.counted) { opacity: 0.55; }
 .ops-staple-card.stocked .staple-name { color: #6a6a6a !important; }
 .staple-head { display: flex; align-items: baseline; gap: 10px; }
-.staple-name { font-size: 0.88rem; flex: 1; cursor: pointer; }
+.staple-namewrap { flex: 1; cursor: pointer; }
+.staple-name { font-size: 0.88rem; }
+.staple-parline { font-size: 0.53rem; font-weight: 900; letter-spacing: 1.5px; color: var(--text-muted); margin-top: 3px; cursor: pointer; }
+.staple-parline.ok { color: var(--done-green); }
+.ops-row.has-staple .ops-row-main { align-items: flex-start; }
 .staple-par { font-size: 0.55rem; font-weight: 900; letter-spacing: 1.5px; color: var(--text-muted); white-space: nowrap; }
 .staple-par.ok { color: var(--done-green); }
 .staple-more { flex-shrink: 0; }

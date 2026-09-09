@@ -3663,7 +3663,13 @@ document.addEventListener('DOMContentLoaded', () => {
         return [...out.values()];
     }
 
-    // Groups with nothing on the board tonight, as ghost rows.
+    // The staple group a live task belongs to, if any.
+    function stapleGroupFor(t) {
+        const k = stapleKey(t);
+        return stapleGroups().find(g => g.members.some(m => m.key === k)) || null;
+    }
+    // Groups with nothing on the board tonight, as their own rows.
+
     function ghostStaples() {
         const have = new Set((opsData.prep || []).map(t => stapleKey(t)));
         const counts = readCounts();
@@ -3697,6 +3703,30 @@ document.addEventListener('DOMContentLoaded', () => {
     const COLLAPSE_KEEP = 4;   // ...and the first few always stay visible
     const openPrepGroups = new Set();
     const openStaples = new Set();
+
+    // Three rows for one juice batch is never right — collapse them. Runs on
+    // every load, so it also repairs whatever created them.
+    function dedupePrepTasks() {
+        const seen = new Map();
+        const keep = [];
+        let changed = false;
+        (opsData.prep || []).forEach(t => {
+            const k = (t.linkedSpec && t.linkedSection)
+                ? `${t.linkedSpec} — ${t.linkedSection}`.toLowerCase().trim() : null;
+            if (!k) { keep.push(t); return; }
+            if (!seen.has(k)) { seen.set(k, t); keep.push(t); return; }
+            const first = seen.get(k);
+            first.qty  = Math.max(first.qty || 1, t.qty || 1);
+            first.made = Math.max(first.made || 0, t.made || 0);
+            if (t.urgent) first.urgent = true;
+            if (t.lastCompleted && (!first.lastCompleted || t.lastCompleted > first.lastCompleted)) {
+                first.lastCompleted = t.lastCompleted;
+            }
+            changed = true;
+        });
+        if (changed) { opsData.prep = keep; saveOps(); }
+        return changed;
+    }
 
     function loadOps() {
         try {
@@ -4327,45 +4357,11 @@ document.addEventListener('DOMContentLoaded', () => {
             const pos = members.findIndex(x => x.taskId === t.taskId && x.text === t.text);
             return pos >= COLLAPSE_KEEP;
         }
-        function buildStapleRow(taskObj) {
-            const g = taskObj.__group;
-            const have = taskObj.__count;
-            const sizeTxt = g.size ? ` \u00d7 ${g.size}` : '';
-            const row = document.createElement('div');
+        // The HAVE / shortfall panel. Same panel whether or not a task exists —
+        // a staple is just a row that knows its par.
+        function buildStapleBody(g) {
+            const have = (() => { const c = readCounts(); return (g.gkey in c) ? c[g.gkey] : null; })();
             const counted = have !== null;
-            const stocked = counted && have >= g.parBusy;
-            row.className = 'ops-row ops-staple-card sec-' + prepGroupOf(taskObj).toLowerCase().replace(/[^a-z]+/g, '-')
-                          + (counted ? ' counted' : '') + (stocked ? ' stocked' : '')
-                          + (openStaples.has(g.gkey) ? ' open' : '');
-
-            const head = document.createElement('div');
-            head.className = 'staple-head';
-            head.innerHTML = `<span class="staple-name">${g.label}</span>`
-                + (stocked
-                    ? `<span class="staple-par ok">STOCKED ${have}/${g.parBusy}</span>`
-                    : `<span class="staple-par">${g.par}${sizeTxt} \u00b7 BUSY ${g.parBusy}</span>`)
-                + `<button class="row-more staple-more" aria-label="Staple actions">\u22ef</button>`;
-            row.appendChild(head);
-
-            if (g.members.length > 1) {
-                const serves = document.createElement('div');
-                serves.className = 'staple-serves';
-                serves.textContent = 'serves ' + g.members.map(m => m.spec).join(' \u00b7 ');
-                row.appendChild(serves);
-            }
-
-            head.querySelector('.staple-name').addEventListener('click', () => {
-                triggerHaptic('light');
-                if (openStaples.has(g.gkey)) openStaples.delete(g.gkey); else openStaples.add(g.gkey);
-                renderOpsList();
-            });
-            head.querySelector('.staple-more').addEventListener('click', (e) => {
-                e.stopPropagation();
-                openStapleActions(g);
-            });
-
-            if (!openStaples.has(g.gkey)) return row;
-
             const body = document.createElement('div');
             body.className = 'staple-body';
             // Chips run to the BUSY par: after a heavy Saturday you can genuinely
@@ -4381,9 +4377,9 @@ document.addEventListener('DOMContentLoaded', () => {
                        <button class="staple-go${shortNormal ? '' : ' flat'}" ${shortNormal ? '' : 'disabled'}>${shortNormal ? 'MAKE ' + shortNormal : 'AT PAR'}</button>
                        <button class="staple-go busy${shortBusy ? '' : ' flat'}" ${shortBusy ? '' : 'disabled'}>${shortBusy ? 'MAKE ' + shortBusy + ' \u00b7 BUSY' : 'AT BUSY PAR'}</button>
                    </div>` : '');
-            row.appendChild(body);
 
-            body.querySelectorAll('.staple-chip').forEach(c => c.addEventListener('click', () => {
+            body.querySelectorAll('.staple-chip').forEach(c => c.addEventListener('click', (e) => {
+                e.stopPropagation();
                 triggerHaptic('light');
                 setStapleCount(g.gkey, parseInt(c.getAttribute('data-n')));
                 renderOpsList();
@@ -4394,8 +4390,9 @@ document.addEventListener('DOMContentLoaded', () => {
                 openStaples.delete(g.gkey);
                 const keys = new Set(g.members.map(m => m.key));
                 const existing = (opsData.prep || []).find(t => keys.has(stapleKey(t)));
-                if (existing) {   // bump, never duplicate
+                if (existing) {          // bump, never duplicate
                     existing.qty = n;
+                    existing.completed = false;
                     saveOps();
                     renderOpsList();
                     return;
@@ -4404,8 +4401,49 @@ document.addEventListener('DOMContentLoaded', () => {
                                  linkedSection: g.section, qty: n });
             };
             const btns = body.querySelectorAll('.staple-go');
-            if (btns[0]) btns[0].addEventListener('click', () => make(shortNormal));
-            if (btns[1]) btns[1].addEventListener('click', () => make(shortBusy));
+            if (btns[0]) btns[0].addEventListener('click', (e) => { e.stopPropagation(); make(shortNormal); });
+            if (btns[1]) btns[1].addEventListener('click', (e) => { e.stopPropagation(); make(shortBusy); });
+            return body;
+        }
+
+        // The par line that hangs under a staple's name, on task rows and empty ones alike.
+        function stapleParLine(g) {
+            const c = readCounts();
+            const have = (g.gkey in c) ? c[g.gkey] : null;
+            const sizeTxt = g.size ? ` \u00d7 ${g.size}` : '';
+            if (have !== null && have >= g.parBusy) {
+                return `<div class="staple-parline ok">STOCKED ${have}/${g.parBusy}</div>`;
+            }
+            return `<div class="staple-parline">${have !== null ? 'HAVE ' + have + ' \u00b7 ' : ''}PAR ${g.par}${sizeTxt} \u00b7 BUSY ${g.parBusy}</div>`;
+        }
+
+        function buildStapleRow(taskObj) {
+            const g = taskObj.__group;
+            const c = readCounts();
+            const have = (g.gkey in c) ? c[g.gkey] : null;
+            const row = document.createElement('div');
+            row.className = 'ops-row ops-staple-card sec-' + prepGroupOf(taskObj).toLowerCase().replace(/[^a-z]+/g, '-')
+                          + (have !== null ? ' counted' : '')
+                          + (have !== null && have >= g.parBusy ? ' stocked' : '');
+
+            const head = document.createElement('div');
+            head.className = 'staple-head';
+            head.innerHTML = `<div class="staple-namewrap"><span class="staple-name">${g.label}</span>`
+                + stapleParLine(g)
+                + (g.members.length > 1 ? `<div class="staple-serves">serves ${g.members.map(m => m.spec).join(' \u00b7 ')}</div>` : '')
+                + `</div><button class="row-more staple-more" aria-label="Staple actions">\u22ef</button>`;
+            row.appendChild(head);
+
+            head.querySelector('.staple-namewrap').addEventListener('click', () => {
+                triggerHaptic('light');
+                if (openStaples.has(g.gkey)) openStaples.delete(g.gkey); else openStaples.add(g.gkey);
+                renderOpsList();
+            });
+            head.querySelector('.staple-more').addEventListener('click', (e) => {
+                e.stopPropagation();
+                openStapleActions(g);
+            });
+            if (openStaples.has(g.gkey)) row.appendChild(buildStapleBody(g));
             return row;
         }
 
@@ -4550,6 +4588,15 @@ document.addEventListener('DOMContentLoaded', () => {
             if (isPrep && isLinked && taskObj.lastCompleted) {
                 labelHtml += `<div class="ops-time-tag">Last batched: ${formatDate(taskObj.lastCompleted)}</div>`;
             }
+            // A staple carries its par on the row itself — the par panel is not a
+            // fallback for an empty board, it is how a staple always reads.
+            const stapleG = isPrep ? stapleGroupFor(taskObj) : null;
+            if (stapleG) {
+                labelHtml += stapleParLine(stapleG);
+                if (stapleG.members.length > 1) {
+                    labelHtml += `<div class="staple-serves">serves ${stapleG.members.map(m => m.spec).join(' \u00b7 ')}</div>`;
+                }
+            }
             
             html += `<span class="ops-text" style="flex:1;">${labelHtml}</span>`;
             
@@ -4578,6 +4625,19 @@ document.addEventListener('DOMContentLoaded', () => {
                 html += `<div class="ops-batch-card"></div>`;
             }
             row.innerHTML = html;
+
+            if (stapleG) {
+                row.classList.add('has-staple');
+                const pl = row.querySelector('.staple-parline');
+                if (pl) pl.addEventListener('click', (e) => {
+                    e.stopPropagation();
+                    triggerHaptic('light');
+                    if (openStaples.has(stapleG.gkey)) openStaples.delete(stapleG.gkey);
+                    else openStaples.add(stapleG.gkey);
+                    renderOpsList();
+                });
+                if (openStaples.has(stapleG.gkey)) row.appendChild(buildStapleBody(stapleG));
+            }
 
             // populate subtask block (always — empty block just shows "+ add step" when expanded)
             buildSubtaskBlock(row.querySelector('.ops-subtasks'), row, activeOpsCategory, taskObj.originalIndex);
@@ -5254,6 +5314,7 @@ document.addEventListener('DOMContentLoaded', () => {
     }
 
     loadOps();
+    dedupePrepTasks();
     seedStaples();
     renderOpsList();
     ensureDeviceName();
