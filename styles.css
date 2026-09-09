@@ -517,28 +517,23 @@ body { background-color: var(--bg-oled); color: var(--text-main); display: flex;
 .ops-prep-section.grp-juice-batch { color: var(--juice-glow); border-bottom-color: rgba(158,196,168,0.3); }
 .ops-prep-section.grp-clarified-batch { color: var(--magenta-glow); border-bottom-color: rgba(176,106,139,0.3); }
 .ops-prep-section.grp-mise { color: var(--mixer-fizz); border-bottom-color: rgba(155,138,196,0.3); }
-/* Staples: a batch that must not run out. Dashed until it becomes a real task. */
-.ops-staple-card { border-style: dashed !important; padding: 12px; }
-.ops-staple-card:not(.counted) { opacity: 0.55; }
-.ops-staple-card.stocked .staple-name { color: #6a6a6a !important; }
-.staple-head { display: flex; align-items: baseline; gap: 10px; }
-.staple-namewrap { flex: 1; cursor: pointer; }
+/* Staples: a batch that must not run out. The HAVE strip sits on the row. */
+.ops-staple-card { border-style: dashed !important; padding: 11px 12px; }
+.ops-staple-card:not(.counted) { opacity: 0.62; }
+.staple-head { display: flex; align-items: flex-start; gap: 10px; }
+.staple-namewrap { flex: 1; min-width: 0; }
 .staple-name { font-size: 0.88rem; }
-.staple-parline { font-size: 0.53rem; font-weight: 900; letter-spacing: 1.5px; color: var(--text-muted); margin-top: 3px; cursor: pointer; }
-.staple-parline.ok { color: var(--done-green); }
-.ops-row.has-staple .ops-row-main { align-items: flex-start; }
-.staple-par { font-size: 0.55rem; font-weight: 900; letter-spacing: 1.5px; color: var(--text-muted); white-space: nowrap; }
-.staple-par.ok { color: var(--done-green); }
 .staple-more { flex-shrink: 0; }
-.staple-serves { font-size: 0.62rem; color: #5a5a5a; margin-top: 3px; }
-.staple-lbl { font-size: 0.53rem; font-weight: 900; letter-spacing: 2px; color: #5a5a5a; margin: 12px 0 6px; }
-.staple-chips { display: flex; gap: 6px; }
-.staple-chip { flex: 1; padding: 9px 4px; background: rgba(255,255,255,0.04); border: 1px solid rgba(255,255,255,0.08); border-radius: 8px; color: var(--text-muted); font-size: 0.8rem; cursor: pointer; }
-.staple-chip.on { background: rgba(158,196,168,0.14); border-color: rgba(158,196,168,0.55); color: var(--juice-glow); font-weight: 700; }
-.staple-acts { display: flex; gap: 6px; margin-top: 11px; }
-.staple-go { flex: 1; padding: 11px 4px; border-radius: 9px; border: none; background: var(--juice-glow); color: var(--bg-oled); font-size: 0.6rem; font-weight: 900; letter-spacing: 1.5px; cursor: pointer; }
-.staple-go.busy { background: none; border: 1px solid rgba(229,177,93,0.55); color: var(--amber-glow); }
-.staple-go.flat { background: none; border: 1px solid rgba(255,255,255,0.08); color: #5a5a5a; cursor: default; }
+.staple-serves { font-size: 0.6rem; color: #4a4a4a; margin-top: 2px; }
+.staple-strip { display: flex; align-items: center; gap: 4px; margin-top: 7px; flex-wrap: wrap; }
+.staple-strip.stocked-line { font-size: 0.53rem; font-weight: 900; letter-spacing: 1.5px; color: var(--done-green); margin-top: 5px; }
+.staple-have { font-size: 0.5rem; letter-spacing: 1.5px; color: #4a4a4a; margin-right: 2px; font-weight: 900; }
+.staple-chip { width: 27px; padding: 4px 0; background: none; border: 1px solid rgba(255,255,255,0.08); border-radius: 6px; color: #6a6a6a; font-size: 0.68rem; cursor: pointer; }
+.staple-chip.parmark { border-bottom-color: rgba(158,196,168,0.5); border-bottom-width: 2px; }
+.staple-chip.on { background: rgba(158,196,168,0.16); border-color: rgba(158,196,168,0.6); color: var(--juice-glow); font-weight: 700; }
+.staple-busy { margin-left: 6px; padding: 4px 8px; background: none; border: 1px solid rgba(255,255,255,0.08); border-radius: 6px; color: #4a4a4a; font-size: 0.5rem; letter-spacing: 1.5px; font-weight: 900; cursor: pointer; }
+.staple-busy.on { border-color: rgba(229,177,93,0.55); color: var(--amber-glow); }
+.ops-row.has-staple .ops-row-main { align-items: flex-start; }
 .ops-row.sec-juice-batch .ops-text { color: var(--juice-glow); }
 .ops-row.sec-clarified-batch .ops-text { color: var(--magenta-glow); }
 .ops-row.sec-mise .ops-text { color: var(--mixer-fizz); }
